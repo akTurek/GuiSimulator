@@ -1,76 +1,93 @@
 package org.example.guisimulator;
 
-public class Sekvencno {
+import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+
+public class Sekvencno extends Service<Void> {
     public MatrikaCelic matrikaCelic;
-    public HelloController helloController;
+    public boolean isOverB;
+    public Canvas canvas;
+    public Lock lock;
+    public Condition rendered;
+    int xsirina;
+    int ysirina;
+    GraphicsContext gc;
 
-    public Sekvencno(int row, int col, int numOfHeat, int time, HelloController controller){
-        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat, time);
-        this.helloController= controller;
 
+    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered) {
+        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
+        this.isOverB = false;
+        this.lock = lock;
+        this.rendered = rendered;
+        xsirina = (int) Math.round(image.getHeight() / row);
+        ysirina = (int) Math.round(image.getWidth()/ col);
+        this.canvas = new Canvas(image.getWidth(), image.getHeight());
+        this.gc = canvas.getGraphicsContext2D();
+        gc.setFill(matrikaCelic.getCol(0,0));
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
     }
 
     public MatrikaCelic getMatrikaCelic() {
         return matrikaCelic;
     }
 
-    public void  calTemp() {
-        long t0 = System.currentTimeMillis();
-        int rows = matrikaCelic.getRow();
-        int cols = matrikaCelic.getCol();
-        do{
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < cols; j++) {
-                    matrikaCelic.calPrevTemp(i,j, rows, cols);
-
+    public void calTemp() throws InterruptedException {
+        do {
+            lock.lock();
+            System.out.println("xsirina: " + xsirina + ", ysirina: " + ysirina);
+            try {
+                float maxTempChange = 0;
+                float change;
+                int rows = matrikaCelic.getRow();
+                int cols = matrikaCelic.getCol();
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        matrikaCelic.calPrevTemp(i, j);
+                    }
                 }
-            }
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        matrikaCelic.calNowTemp(i, j);
+                        gc.setFill(matrikaCelic.getCol(i, j));
+                        gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
 
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < cols; j++) {
-                    matrikaCelic.calNowTemp(i,j, rows, cols);
-                    helloController.pobarvajKvadartCanvas(i, j, matrikaCelic.getCelica(i,j).getNowTemp());
+
+                        change = matrikaCelic.tempChange(i, j);
+                        if (change > maxTempChange) {
+                            maxTempChange = change;
+                        }
+                    }
                 }
-            }
-
-
-
-        }while (!isOver(rows, cols));
-        long t1 = System.currentTimeMillis();
-        System.out.println("Trajanje programa v ms: " +(t1-t0)+ " max temp change "+maxTempChanfe(rows, cols));
-    }
-    public boolean isOver(int rows, int cols){
-        float maxTempChange = 0;
-        float change;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                change = matrikaCelic.tempChange(i,j);
-                if (change>maxTempChange){
-                    maxTempChange = change;
+                if (maxTempChange >= 0.25) {
+                    isOverB = false;
+                } else {
+                    isOverB = true;
                 }
+                System.out.println(maxTempChange);
+                rendered.await();
+            } finally {
+                lock.unlock();
             }
-        }
-        // System.out.println(maxTempChange);
-        if (maxTempChange >= 0.25) {
-            return false;
-        }else {
-            return true;
-        }
+        } while (!isOverB);
+
     }
 
-    public float maxTempChanfe(int rows, int cols){
-        float maxTempChange = 0;
-        float change = 0;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                change = matrikaCelic.tempChange(i, j);
-                if (change >= maxTempChange) {
-                    maxTempChange = change;
-
-                }
+    @Override
+    protected Task<Void> createTask() {
+        return new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                calTemp();
+                return null;
             }
-        }
-
-        return maxTempChange;
+        };
     }
 }

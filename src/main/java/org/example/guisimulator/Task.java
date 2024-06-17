@@ -1,15 +1,17 @@
 package org.example.guisimulator;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-
+import javafx.scene.paint.Color;
 class Task implements Runnable {
     private Multi multi;
     private int taskId;
     private int startRow;
     private int endRow;
     private int rows, cols;
-    CyclicBarrier cyclicBarrier;
+    public CyclicBarrier cyclicBarrier;
+
 
     public Task(Multi multi, int taskId, CyclicBarrier cyclicBarrier) {
         this.multi = multi;
@@ -19,35 +21,10 @@ class Task implements Runnable {
         this.rows = multi.matrikaCelic.row;
         this.cols = multi.matrikaCelic.col;
         this.cyclicBarrier = cyclicBarrier;
+
     }
 
-    public boolean lock(int[] array) {
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public float maxTempChanfe() {
-        float maxTempChange = 0;
-        float change = 0;
-        for (int i = startRow; i < endRow; i++) {
-            for (int j = 0; j < cols; j++) {
-                change = multi.matrikaCelic.tempChange(i, j);
-                if (change >= maxTempChange) {
-                    maxTempChange = change;
-
-                }
-            }
-        }
-
-        return maxTempChange;
-    }
-
-    public void isOver() {
-        float maxTempChange = maxTempChanfe();
+    public void isOver( float maxTempChange) {
         //System.out.println(" temperaturna sprememba " +maxTempChange+" Threda "+taskId);
         if (maxTempChange >= 0.25) {
             multi.areAllTasksOverArr[taskId] = 0;
@@ -56,31 +33,14 @@ class Task implements Runnable {
         }
     }
 
-    private synchronized void waitForCondition() {
-        multi.wait[this.taskId] = 1;
-        while (lock(multi.wait)) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Thread interrupted");
-            }
-        }
-        System.out.println("Lock opend");
-        multi.wait[this.taskId] = 0;
-        notifyAll();
-    }
+    public void callTemp(){
+        float maxTempChange = 0;
+        float change = 0;
 
-    @Override
-    public void run() {
-
-        System.out.println("Task " + taskId + " is being processed by thread " + Thread.currentThread().getName() +
-                " My startRow " + startRow + " My endRow " + endRow);
-        do {
             //calPrevTemp
             for (int k = startRow; k < endRow; k++) {
                 for (int j = 0; j < multi.matrikaCelic.col; j++) {
-                    multi.matrikaCelic.calPrevTemp(k, j, rows, cols);
+                    multi.matrikaCelic.calPrevTemp(k, j);
                 }
             }
 
@@ -95,7 +55,11 @@ class Task implements Runnable {
             //calNowTemp
             for (int i = startRow; i < endRow; i++) {
                 for (int j = 0; j < cols; j++) {
-                    multi.matrikaCelic.calNowTemp(i, j, rows, cols);
+                    multi.matrikaCelic.calNowTemp(i, j);
+                    change = multi.matrikaCelic.tempChange(i, j);
+                    if (change >= maxTempChange) {
+                        maxTempChange = change;
+                    }
                 }
             }
             //Barrier
@@ -106,7 +70,7 @@ class Task implements Runnable {
                 System.err.println("Thread interrupted or barrier broken");
             }
             //max sprememba temp <0.25
-            isOver();
+            isOver(maxTempChange);
 
             //Barrier
             try {
@@ -117,9 +81,6 @@ class Task implements Runnable {
             }
             //System.out.println();
 
-
-            System.out.println(
-                    " Nit  " + taskId + " tocka " + 2 + " ima temperaturo " + multi.matrikaCelic.getMatrikaCelic()[5][2].getNowTemp());
             try {
                 cyclicBarrier.await();
             } catch (InterruptedException | BrokenBarrierException e) {
@@ -127,13 +88,15 @@ class Task implements Runnable {
                 System.err.println("Thread interrupted or barrier broken");
             }
 
-
-            System.out.println();
-
-
-        } while (!lock(multi.areAllTasksOverArr));
+    }
 
 
+
+
+
+    @Override
+    public void run() {
+        callTemp();
     }
 
 }

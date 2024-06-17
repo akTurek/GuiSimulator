@@ -1,43 +1,100 @@
 package org.example.guisimulator;
 
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-public class Multi {
+import javafx.concurrent.Service;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Multi  extends Service {
     public MatrikaCelic matrikaCelic;
     public int numberOfThreads;
     public int[] wait;
     public int[] areAllTasksOverArr;
 
 
-    public Multi(int row, int col, int numOfHeat, double time, int numberOfThreads) {
-        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat, time);
+    public Canvas canvas;
+    public Lock lock;
+    public Condition rendered;
+
+
+
+    GraphicsContext gc;
+    int xsirina;
+    int ysirina;
+    int rows, cols;
+
+
+    public Multi(int row, int col, int numOfHeat, int numberOfThreads, WritableImage image, Lock lock, Condition rendered) {
+        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
         this.numberOfThreads = numberOfThreads;
         this.wait = new int[numberOfThreads];
         this.areAllTasksOverArr = new int[numberOfThreads];
-
         for (int i = 0; i < numberOfThreads; i++) {
             wait[i] = 0;
             areAllTasksOverArr[i] = 0;
         }
+        this.rows = row;
+        this.cols = col;
+        xsirina = (int) Math.round(image.getHeight() / row);
+        ysirina = (int) Math.round(image.getWidth()/ col);
+        this.canvas = new Canvas(image.getWidth(), image.getHeight());
+        this.gc = canvas.getGraphicsContext2D();
+        gc.setFill(matrikaCelic.getCol(0,0));
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        this.lock = lock;
+        this.rendered = rendered;
+
+
+    }
+
+    public boolean lockIsOver(int[] array) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
-    public void calTemp() {
 
-        long t0 = System.currentTimeMillis();
+    public void calTemp() throws InterruptedException {
+
         CyclicBarrier cyclicBarrier = new CyclicBarrier(numberOfThreads);
-
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
 
-        // Submit tasks to the thread pool
-        for (int i = 0; i < numberOfThreads; i++) {
-            // Each task operates on the same shared object
-            Runnable task = new Task(this, i, cyclicBarrier);
-            executorService.submit(task);
-        }
+        do {
+            lock.lock();
+            try {
+                for (int i = 0; i < numberOfThreads; i++) {
+                    //Nad skupnim objektom brez konflikta, druge lokacijem, ali pa pregrada
+                    Task task = new Task(this, i, cyclicBarrier);
+                    executorService.submit(task);
+                    System.out.println("Thread " + i + " started");
+                }
+
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        gc.setFill(matrikaCelic.getCol(i, j));
+                        gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
+                        System.out.println("Drawing point (" + i + ", " + j + ")");
+                    }
+                }
+
+                rendered.await();
+            }finally {
+                lock.unlock();
+            }
+
+        }while (!lockIsOver(areAllTasksOverArr));
+
 
         // Shutdown the thread pool after all tasks are completed
         executorService.shutdown();
@@ -50,8 +107,17 @@ public class Multi {
             System.err.println("Thread interrupted while waiting for termination");
         }
 
-        long t1 = System.currentTimeMillis();
-        System.out.println("Trajanje programa v ms: " + (t1 - t0));
+    }
+
+    @Override
+    protected javafx.concurrent.Task createTask() {
+        return new javafx.concurrent.Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                calTemp();
+                return null;
+            }
+        };
     }
 }
 
