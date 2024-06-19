@@ -46,10 +46,18 @@ public class MatrikaCelic {
         double normalizedValue;
         for (int i = 0; i <= 100; i++) {
             normalizedValue = i / 100.0;
-            if (i < 50) {
-                barva[i] = Color.color(0, normalizedValue * 2, 1);
+            if (i < 25) {
+                // Modra do vijolična
+                barva[i] = Color.color(0, 0, normalizedValue * 4); // Povečamo modro komponento za temnejši odtenek modre proti vijolični
+            } else if (i < 50) {
+                // Vijolična do rožnata
+                barva[i] = Color.color(normalizedValue * 4 - 1, 0, 1); // Zmanjšamo modro komponento za rožnato barvo
+            } else if (i < 75) {
+                // Rožnata do oranžna
+                barva[i] = Color.color(1, normalizedValue * 2 - 1, 0); // Povečamo rdečo komponento za rožnato barvo proti oranžni
             } else {
-                barva[i] = Color.color(1, 1 - (normalizedValue / 2), 1);
+                // Oranžna
+                barva[i] = Color.color(1, 1 - (normalizedValue / 4), 0); // Zmanjšamo zeleno komponento za svetlejši odtenek oranžne
             }
         }
     }

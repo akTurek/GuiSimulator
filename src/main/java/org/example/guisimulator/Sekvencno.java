@@ -8,6 +8,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
@@ -17,12 +18,13 @@ public class Sekvencno extends Service<Void> {
     public Canvas canvas;
     public Lock lock;
     public Condition rendered;
-    int xsirina;
-    int ysirina;
-    GraphicsContext gc;
+    public int xsirina;
+    public int ysirina;
+    public GraphicsContext gc;
+    public AtomicBoolean konec;
 
 
-    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered) {
+    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec) {
         this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
         this.isOverB = false;
         this.lock = lock;
@@ -33,6 +35,7 @@ public class Sekvencno extends Service<Void> {
         this.gc = canvas.getGraphicsContext2D();
         gc.setFill(matrikaCelic.getCol(0,0));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        this.konec = konec;
     }
 
     public MatrikaCelic getMatrikaCelic() {
@@ -42,7 +45,6 @@ public class Sekvencno extends Service<Void> {
     public void calTemp() throws InterruptedException {
         do {
             lock.lock();
-            System.out.println("xsirina: " + xsirina + ", ysirina: " + ysirina);
             try {
                 float maxTempChange = 0;
                 float change;
@@ -71,7 +73,6 @@ public class Sekvencno extends Service<Void> {
                 } else {
                     isOverB = true;
                 }
-                System.out.println(maxTempChange);
                 rendered.await();
             } finally {
                 lock.unlock();
@@ -86,6 +87,7 @@ public class Sekvencno extends Service<Void> {
             @Override
             protected Void call() throws Exception {
                 calTemp();
+                konec.set(false);
                 return null;
             }
         };

@@ -7,6 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -24,13 +25,15 @@ public class Multi  extends Service {
 
 
 
-    GraphicsContext gc;
-    int xsirina;
-    int ysirina;
-    int rows, cols;
+    public GraphicsContext gc;
+    public int xsirina;
+    public int ysirina;
+    public int rows, cols;
+
+    public AtomicBoolean konec;
 
 
-    public Multi(int row, int col, int numOfHeat, int numberOfThreads, WritableImage image, Lock lock, Condition rendered) {
+    public Multi(int row, int col, int numOfHeat, int numberOfThreads, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec) {
         this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
         this.numberOfThreads = numberOfThreads;
         this.wait = new int[numberOfThreads];
@@ -51,6 +54,7 @@ public class Multi  extends Service {
         this.lock = lock;
         this.rendered = rendered;
 
+        this.konec = konec;
 
     }
 
@@ -77,14 +81,12 @@ public class Multi  extends Service {
                     //Nad skupnim objektom brez konflikta, druge lokacijem, ali pa pregrada
                     Task task = new Task(this, i, cyclicBarrier);
                     executorService.submit(task);
-                    System.out.println("Thread " + i + " started");
                 }
 
                 for (int i = 0; i < rows; i++) {
                     for (int j = 0; j < cols; j++) {
                         gc.setFill(matrikaCelic.getCol(i, j));
                         gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
-                        System.out.println("Drawing point (" + i + ", " + j + ")");
                     }
                 }
 
@@ -115,6 +117,7 @@ public class Multi  extends Service {
             @Override
             protected Void call() throws Exception {
                 calTemp();
+                konec.set(false);
                 return null;
             }
         };
