@@ -42,24 +42,26 @@ public class MatrikaCelic {
         return barva[(int) matrikaCelic[i][j].getNowTemp()];
     }
 
-    private void arrayBrav() {
-        double normalizedValue;
+    public void arrayBrav() {
         for (int i = 0; i <= 100; i++) {
-            normalizedValue = i / 100.0;
-            if (i < 25) {
-                // Modra do vijolična
-                barva[i] = Color.color(0, 0, normalizedValue * 4); // Povečamo modro komponento za temnejši odtenek modre proti vijolični
-            } else if (i < 50) {
-                // Vijolična do rožnata
-                barva[i] = Color.color(normalizedValue * 4 - 1, 0, 1); // Zmanjšamo modro komponento za rožnato barvo
-            } else if (i < 75) {
-                // Rožnata do oranžna
-                barva[i] = Color.color(1, normalizedValue * 2 - 1, 0); // Povečamo rdečo komponento za rožnato barvo proti oranžni
-            } else {
-                // Oranžna
-                barva[i] = Color.color(1, 1 - (normalizedValue / 4), 0); // Zmanjšamo zeleno komponento za svetlejši odtenek oranžne
+            if (i < 34) { // Blue to light blue
+                double t = i / 34.0;
+                barva[i] = interpolateColor(Color.BLUE, Color.LIGHTBLUE, t);
+            } else if (i < 67) { // Light blue to orange
+                double t = (i - 34) / 33.0;
+                barva[i] = interpolateColor(Color.LIGHTBLUE, Color.ORANGE, t);
+            } else { // Orange to red
+                double t = (i - 67) / 33.0;
+                barva[i] = interpolateColor(Color.ORANGE, Color.RED, t);
             }
         }
+    }
+
+    private Color interpolateColor(Color start, Color end, double t) {
+        double r = start.getRed() + t * (end.getRed() - start.getRed());
+        double g = start.getGreen() + t * (end.getGreen() - start.getGreen());
+        double b = start.getBlue() + t * (end.getBlue() - start.getBlue());
+        return new Color(r, g, b, 1.0); // Ensure full opacity
     }
 
     private Celica[][] narediMatriko() {
