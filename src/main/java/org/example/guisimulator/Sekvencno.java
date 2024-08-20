@@ -62,7 +62,7 @@ public class Sekvencno extends Service<Void> {
                         gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
 
 
-                        change = matrikaCelic.tempChange(i, j);
+                        change = matrikaCelic.getTempChange(i, j);
                         if (change > maxTempChange) {
                             maxTempChange = change;
                         }

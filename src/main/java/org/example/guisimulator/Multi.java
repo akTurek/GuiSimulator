@@ -15,8 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Multi  extends Service {
     public MatrikaCelic matrikaCelic;
     public int numberOfThreads;
-    public int[] wait;
-    public int[] areAllTasksOverArr;
+    public AtomicBoolean isOver;
 
 
     public Canvas canvas;
@@ -36,12 +35,7 @@ public class Multi  extends Service {
     public Multi(int row, int col, int numOfHeat, int numberOfThreads, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec) {
         this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
         this.numberOfThreads = numberOfThreads;
-        this.wait = new int[numberOfThreads];
-        this.areAllTasksOverArr = new int[numberOfThreads];
-        for (int i = 0; i < numberOfThreads; i++) {
-            wait[i] = 0;
-            areAllTasksOverArr[i] = 0;
-        }
+        this.isOver = new AtomicBoolean(false);
         this.rows = row;
         this.cols = col;
         xsirina = (int) Math.round(image.getHeight() / row);
@@ -76,6 +70,7 @@ public class Multi  extends Service {
 
         do {
             lock.lock();
+            isOver.set(true);
             try {
                 for (int i = 0; i < numberOfThreads; i++) {
                     //Nad skupnim objektom brez konflikta, druge lokacijem, ali pa pregrada
@@ -95,7 +90,7 @@ public class Multi  extends Service {
                 lock.unlock();
             }
 
-        }while (!lockIsOver(areAllTasksOverArr));
+        }while (!isOver.get());
 
 
         // Shutdown the thread pool after all tasks are completed
