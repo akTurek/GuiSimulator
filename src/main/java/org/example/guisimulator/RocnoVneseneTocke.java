@@ -33,26 +33,6 @@ public class RocnoVneseneTocke {
 
 
 
-    // Očisti seznam vseh točk
-    public void clear() {
-        lock.lock();
-        try {
-            list.clear();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    // Branje vseh točk (vrne kopijo seznama)
-    public List<int[]> readAll() {
-        lock.lock();
-        try {
-            return new LinkedList<>(list); // Vrne kopijo, da prepreči sočasne spremembe
-        } finally {
-            lock.unlock();
-        }
-    }
-
     public List<int[]> readAllDel() {
         lock.lock();
         try {
@@ -63,5 +43,16 @@ public class RocnoVneseneTocke {
             lock.unlock();
         }
     }
+
+    // Vrne število elementov v seznamu
+    public int size() {
+        lock.lock();
+        try {
+            return list.size();
+        } finally {
+            lock.unlock();
+        }
+    }
+
 
 }

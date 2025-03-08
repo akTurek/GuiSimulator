@@ -14,6 +14,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 
 
 import java.util.LinkedList;
@@ -33,6 +34,7 @@ public class HelloController {
     public RocnoVneseneTocke list = new RocnoVneseneTocke();
     private final List<double[]> clickedCells = new LinkedList<>();
     private boolean running = false;
+  ;
 
 
 
@@ -75,14 +77,9 @@ public class HelloController {
         imageView.setImage(image);
         imageView.setPreserveRatio(false);
 
-        imageView.fitWidthProperty().bind(
-                Bindings.createDoubleBinding(() ->
-                                pane.getWidth() - vBox.getWidth(),
-                        pane.widthProperty(),
-                        vBox.widthProperty()
-                )
-        );
+        imageView.fitWidthProperty().bind(pane.widthProperty().subtract(vBox.widthProperty()));
         imageView.fitHeightProperty().bind(pane.heightProperty());
+
 
         imageView.setOnMouseClicked(event -> {
             double mouseX = event.getX();
@@ -159,10 +156,13 @@ public class HelloController {
                 }
 
                 if (closestPoint != null) {
+                    hslable.setText(String.valueOf(Integer.parseInt(hslable.getText()) - 1));
+
                     clickedCells.remove(closestPoint);
                 }
             } else {
                 clickedCells.add(new double[]{relativeX, relativeY});
+                hslable.setText(String.valueOf(Integer.parseInt(hslable.getText()) + 1));
                 System.out.println("Točka dodana.");
             }
 
@@ -230,39 +230,48 @@ public class HelloController {
         clickedCells.clear();
     }
 
-    private void convertSinglePoint(double x, double y){
-        int row = Integer.parseInt(slable.getText()); // Trenutno število vrstic
-        int col = Integer.parseInt(vlable.getText()); // Trenutno število stolpcev
-
-        int cellX = (int) (x * col); // Iz relativne vrednosti izračunaj indeks stolpca
-        int cellY = (int) (y * row); // Iz relativne vrednosti izračunaj indeks vrstice
-        list.insert(cellX,cellY);
-
-    }
 
     @FXML
     private void resizeImage(double newWidth, double newHeight) {
-
         if (newWidth <= 0 || newHeight <= 0) {
             System.out.println("Preskakujem resize, ker so dimenzije neveljavne: " + newWidth + "x" + newHeight);
             return;
         }
-        int width = (int) Math.max(1, newWidth - vBox.getWidth()); // Prepreči 0 ali negativno širino
-        int height = (int) Math.max(1, newHeight); // Prepreči 0 ali negativno višino
 
+        // Nastavitev širine in višine glede na ImageView
+        int width = (int) Math.max(1, imageView.getFitWidth());
+        int height = (int) Math.max(1, imageView.getFitHeight());
+
+        // Ustvarimo novo sliko z novo velikostjo
         WritableImage newImage = new WritableImage(width, height);
         image = newImage;
-        if(novoRisanje.get()==false){
+
+        if (!novoRisanje.get()) {
             redraw();
             imageView.setImage(newImage);
+            System.out.println("Prilagojena velikost slike: " + width + " x " + height);
         }
     }
 
-    private void setInputsDisabled(boolean disable) {
+
+    private void toggleUI(boolean disable) {
         slable.setDisable(disable);
         vlable.setDisable(disable);
         hslable.setDisable(disable);
+        choiceBox.setDisable(disable);
+        start.setDisable(disable);
+
+        // Onemogoči spreminjanje velikosti okna
+        Platform.runLater(() -> {
+            Stage stage = (Stage) start.getScene().getWindow(); // Pridobi Stage iz start gumba
+            if (stage != null) {
+                stage.setResizable(!disable);
+                System.out.println("Stage resizable set to: " + !disable); // Debug izpis
+            }
+        });
     }
+
+
 
 
 
@@ -271,7 +280,6 @@ public class HelloController {
         if (novoRisanje.get() == false){
             convertList();
             novoRisanje.set(true);
-            setInputsDisabled(true);
             new CanvasRedrawHandler().start();
             racunanje.setText("Racunanje");
 
@@ -328,6 +336,7 @@ public class HelloController {
                     novoRisanje.set(false);
                     long l = System.currentTimeMillis() - timeS;
                     racunanje.setText("Konec, cas simulacije: "+l+" ms");
+                    Platform.runLater(() -> toggleUI(false));
                     this.stop();
                 }
 
@@ -338,7 +347,7 @@ public class HelloController {
             long elapsedTime = (System.nanoTime() - time) / 1_000_000;
             //System.out.println("Time since last redraw: " + elapsedTime + " ms");
             time = System.nanoTime();
-            setInputsDisabled(false);
+            ;
 
 
         }

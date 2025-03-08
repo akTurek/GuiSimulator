@@ -20,7 +20,7 @@ public class MatrikaCelic {
     public MatrikaCelic(int row, int col, int numOfHeat, RocnoVneseneTocke list) {
         this.row = row;
         this.col = col;
-        this.numOfHeat = numOfHeat;
+        this.numOfHeat = numOfHeat - list.size();
         this.prevTemp = new float[row][col];
         this.nowTemp = new float[row][col];
         this.isHeatSource = new boolean[row][col];
@@ -64,6 +64,8 @@ public class MatrikaCelic {
         while (count < numOfHeat) {
             int randomRow = rand.nextInt(row);
             int randomCol = rand.nextInt(col);
+
+
             if (!isHeatSource[randomRow][randomCol]) {
                 prevTemp[randomRow][randomCol] = 100.F;
                 nowTemp[randomRow][randomCol] = 100.F;
@@ -71,24 +73,8 @@ public class MatrikaCelic {
                 count++;
             }
 
-            List<int[]> heatSources = list.readAllDel();
-            System.out.println("Tukaj sem kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
-
-                for (int[] cell : heatSources) {
-                    int i = cell[0]; // Vrstica
-                    int j = cell[1]; // Stolpec
-
-                    if (i >= 0 && i < row && j >= 0 && j < col && !isHeatSource[i][j]) {
-                        prevTemp[i][j] = 100.F;
-                        nowTemp[i][j] = 100.F;
-                        isHeatSource[i][j] = true;
-                        System.out.println("Dodajam ročni heat source: (" + i + ", " + j + ")");
-                    } else{
-                        System.out.println("napaka");
-                    }
-                }
-
         }
+        newHS();
     }
 
 

@@ -26,7 +26,7 @@ public class Sekvencno extends Service<Void> {
 
 
     public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec, RocnoVneseneTocke list) {
-        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat, list);
+        this.matrikaCelic = new MatrikaCelic(row+2, col+2, numOfHeat, list);
         this.isOverB = false;
         this.lock = lock;
         this.rendered = rendered;
