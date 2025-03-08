@@ -22,20 +22,29 @@ public class Sekvencno extends Service<Void> {
     public int ysirina;
     public GraphicsContext gc;
     public AtomicBoolean konec;
+    public RocnoVneseneTocke list;
 
 
-    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec) {
-        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
+    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec, RocnoVneseneTocke list) {
+        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat, list);
         this.isOverB = false;
         this.lock = lock;
         this.rendered = rendered;
-        xsirina = (int) Math.round(image.getHeight() / row);
-        ysirina = (int) Math.round(image.getWidth()/ col);
+        this.xsirina = (int) Math.floor(image.getWidth() / (double) col);
+        this.ysirina = (int) Math.floor(image.getHeight() / (double) row);
+        this.list = list;
         this.canvas = new Canvas(image.getWidth(), image.getHeight());
         this.gc = canvas.getGraphicsContext2D();
         gc.setFill(matrikaCelic.getCol(0,0));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         this.konec = konec;
+
+        System.out.println("v sekvencnem image w and h "+image.getWidth()+" "+image.getHeight());
+        System.out.println("v sekvencenm velikost canvasa w h "+canvas.getWidth()+" "+canvas.getHeight());
+        System.out.println("Celice: xsirina=" + xsirina + ", ysirina=" + ysirina);
+        System.out.println("Izračunana širina (xsirina * col): " + (xsirina * col));
+        System.out.println("Izračunana višina (ysirina * row): " + (ysirina * row));
+        System.out.println("Slika w x h: " + image.getWidth() + " x " + image.getHeight());
     }
 
     public MatrikaCelic getMatrikaCelic() {
@@ -45,6 +54,8 @@ public class Sekvencno extends Service<Void> {
     public void calTemp() throws InterruptedException {
         do {
             lock.lock();
+            matrikaCelic.newHS();
+
             try {
                 float maxTempChange = 0;
                 float change;
@@ -80,6 +91,8 @@ public class Sekvencno extends Service<Void> {
         } while (!isOverB);
 
     }
+
+
 
     @Override
     protected Task<Void> createTask() {

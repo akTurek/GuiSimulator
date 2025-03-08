@@ -2,6 +2,7 @@ package org.example.guisimulator;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Color;
 
+import java.util.List;
 import java.util.Random;
 
 
@@ -13,15 +14,17 @@ public class MatrikaCelic {
     private float [][] prevTemp;
     private float [][] nowTemp;
     private boolean [][] isHeatSource;
+    private RocnoVneseneTocke list;
     Color [] barva = new Color[101];
 
-    public MatrikaCelic(int row, int col, int numOfHeat) {
+    public MatrikaCelic(int row, int col, int numOfHeat, RocnoVneseneTocke list) {
         this.row = row;
         this.col = col;
         this.numOfHeat = numOfHeat;
         this.prevTemp = new float[row][col];
         this.nowTemp = new float[row][col];
         this.isHeatSource = new boolean[row][col];
+        this.list = list;
         narediMatriko();
         arrayBrav();
 
@@ -47,7 +50,7 @@ public class MatrikaCelic {
                 if (i == 0 || i == row - 1 || j == 0 || j == col - 1){
                     prevTemp[i][j] = 0.F;
                     nowTemp[i][j] = 0.F;
-                    isHeatSource[i][j] = true; //robi so 0C ampak  heat sourci, da se jih ne racuna
+                    isHeatSource[i][j] = true; //robi so 0C ampak  heat sourci, da se jih ne racuna, malo len edge case
                 }else {
                     prevTemp[i][j] = 0.F;
                     nowTemp[i][j] = 0.F;
@@ -56,7 +59,7 @@ public class MatrikaCelic {
             }
         }
 
-        Random rand = new Random();
+        Random rand = new Random(23);
         int count = 0;
         while (count < numOfHeat) {
             int randomRow = rand.nextInt(row);
@@ -67,6 +70,24 @@ public class MatrikaCelic {
                 isHeatSource[randomRow][randomCol] = true;
                 count++;
             }
+
+            List<int[]> heatSources = list.readAllDel();
+            System.out.println("Tukaj sem kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
+
+                for (int[] cell : heatSources) {
+                    int i = cell[0]; // Vrstica
+                    int j = cell[1]; // Stolpec
+
+                    if (i >= 0 && i < row && j >= 0 && j < col && !isHeatSource[i][j]) {
+                        prevTemp[i][j] = 100.F;
+                        nowTemp[i][j] = 100.F;
+                        isHeatSource[i][j] = true;
+                        System.out.println("Dodajam ročni heat source: (" + i + ", " + j + ")");
+                    } else{
+                        System.out.println("napaka");
+                    }
+                }
+
         }
     }
 
@@ -85,6 +106,26 @@ public class MatrikaCelic {
 
     public float getTempChange(int i, int j){
         return Math.abs(nowTemp[i][j] - prevTemp[i][j]);
+    }
+
+    public void newHS (){
+        if(!list.isEmpty()){
+            List<int[]> heatSources = list.readAllDel();
+
+            for (int[] cell : heatSources) {
+                int i = cell[0]; // Vrstica
+                int j = cell[1]; // Stolpec
+
+                if (i >= 0 && i < row && j >= 0 && j < col) {
+                    prevTemp[i][j] = 100.F;
+                    nowTemp[i][j] = 100.F;
+                    isHeatSource[i][j] = true;
+                    System.out.println("Dodajam ročni heat source: (" + i + ", " + j + ")");
+                } else{
+                    System.out.println("napaka out of bound" + i+" "+j);
+                }
+            }
+        }
     }
 
     public void arrayBrav() {

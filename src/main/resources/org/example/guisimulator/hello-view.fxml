@@ -12,11 +12,11 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane fx:id="pane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0" style="-fx-background-color: #ff9933; -fx-background-radius: 0; -fx-border-width: 0;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.guisimulator.HelloController">
+<AnchorPane fx:id="pane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #ff9933; -fx-background-radius: 0; -fx-border-width: 0;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.guisimulator.HelloController">
    <children>
-      <HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0">
+      <HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0">
          <children>
-            <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="200.0">
+            <VBox fx:id="vBox" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="200.0">
                <children>
                   <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0">
                      <children>
@@ -61,7 +61,7 @@
                   </HBox>
                   <HBox alignment="CENTER" prefHeight="50.0" prefWidth="200.0">
                      <children>
-                        <Button fx:id="start1" mnemonicParsing="false" onAction="#zacbiSim" prefHeight="26.0" prefWidth="131.0" style="-fx-background-color: #ffffcc;" text="Start" />
+                        <Button fx:id="start" mnemonicParsing="false" onAction="#zacbiSim" prefHeight="26.0" prefWidth="131.0" style="-fx-background-color: #ffffcc;" text="Start" />
                      </children>
                   </HBox>
                   <HBox alignment="TOP_CENTER" layoutX="10.0" layoutY="407.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="200.0">
@@ -78,7 +78,7 @@
                   </HBox>
                </children>
             </VBox>
-            <ImageView fx:id="imageView" fitHeight="800.0" fitWidth="800.0" preserveRatio="true">
+            <ImageView fx:id="imageView" fitHeight="600.0" fitWidth="600.0" preserveRatio="true">
                <image>
                   <Image url="@abstract_background_with_a_heat_map_styled_design_3001.jpg" />
                </image>

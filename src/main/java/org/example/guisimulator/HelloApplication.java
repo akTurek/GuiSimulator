@@ -15,7 +15,7 @@ public class HelloApplication extends Application {
         stage.setTitle("Heatmap simulator");
         stage.setScene(scene);
         stage.getIcons().add(new Image(HelloApplication.class.getResourceAsStream("ogn.png")));
-        stage.setResizable(false);
+        stage.setResizable(true);
         stage.show();
 
     }
