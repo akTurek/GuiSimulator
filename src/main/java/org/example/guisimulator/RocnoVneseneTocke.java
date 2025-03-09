@@ -7,10 +7,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class RocnoVneseneTocke {
     private final List<int[]> list = new LinkedList<>();
-    private final Lock lock = new ReentrantLock(); // Ključavnica za thread-safety
+    private final Lock lock = new ReentrantLock();
 
-
-    // Preveri, ali je seznam prazen
     public boolean isEmpty() {
         lock.lock();
         try {
@@ -20,8 +18,6 @@ public class RocnoVneseneTocke {
         }
     }
 
-
-    // Dodajanje točke (int x, int y)
     public void insert(int x, int y) {
         lock.lock();
         try {
@@ -31,20 +27,17 @@ public class RocnoVneseneTocke {
         }
     }
 
-
-
     public List<int[]> readAllDel() {
         lock.lock();
         try {
-            List<int[]> tmp = new LinkedList<>(list); // Dodaj manjkajoči generični tip `<int[]>`
+            List<int[]> tmp = new LinkedList<>(list);
             list.clear();
-            return tmp; // Vrne kopijo in izbriše originalen seznam
+            return tmp;
         } finally {
             lock.unlock();
         }
     }
 
-    // Vrne število elementov v seznamu
     public int size() {
         lock.lock();
         try {
@@ -53,6 +46,5 @@ public class RocnoVneseneTocke {
             lock.unlock();
         }
     }
-
 
 }

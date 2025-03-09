@@ -1,5 +1,5 @@
 package org.example.guisimulator;
-import javafx.scene.paint.Color;
+
 import javafx.scene.paint.Color;
 
 import java.util.List;
@@ -11,11 +11,11 @@ public class MatrikaCelic {
     final int col;
     final int numOfHeat;
 
-    private float [][] prevTemp;
-    private float [][] nowTemp;
-    private boolean [][] isHeatSource;
+    private float[][] prevTemp;
+    private float[][] nowTemp;
+    private boolean[][] isHeatSource;
     private RocnoVneseneTocke list;
-    Color [] barva = new Color[101];
+    Color[] barva = new Color[101];
 
     public MatrikaCelic(int row, int col, int numOfHeat, RocnoVneseneTocke list) {
         this.row = row;
@@ -47,11 +47,11 @@ public class MatrikaCelic {
 
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
-                if (i == 0 || i == row - 1 || j == 0 || j == col - 1){
+                if (i == 0 || i == row - 1 || j == 0 || j == col - 1) {
                     prevTemp[i][j] = 0.F;
                     nowTemp[i][j] = 0.F;
-                    isHeatSource[i][j] = true; //robi so 0C ampak  heat sourci, da se jih ne racuna, malo len edge case
-                }else {
+                    isHeatSource[i][j] = true;
+                } else {
                     prevTemp[i][j] = 0.F;
                     nowTemp[i][j] = 0.F;
                     isHeatSource[i][j] = false;
@@ -80,35 +80,33 @@ public class MatrikaCelic {
 
     public void calNowTemp(int i, int j) {
         if (!isHeatSource[i][j]) {
-            nowTemp[i][j] = (prevTemp[i - 1][j]+ prevTemp[i + 1][j] + prevTemp[i][j + 1] + prevTemp[i][j - 1])/4;
+            nowTemp[i][j] = (prevTemp[i - 1][j] + prevTemp[i + 1][j] + prevTemp[i][j + 1] + prevTemp[i][j - 1]) / 4;
         }
     }
 
     public void calPrevTemp(int i, int j) {
         if (!isHeatSource[i][j]) {
-            prevTemp[i][j] = (nowTemp[i - 1][j]+ nowTemp[i + 1][j] + nowTemp[i][j + 1] + nowTemp[i][j - 1])/4;
+            prevTemp[i][j] = (nowTemp[i - 1][j] + nowTemp[i + 1][j] + nowTemp[i][j + 1] + nowTemp[i][j - 1]) / 4;
         }
     }
 
-    public float getTempChange(int i, int j){
+    public float getTempChange(int i, int j) {
         return Math.abs(nowTemp[i][j] - prevTemp[i][j]);
     }
 
-    public void newHS (){
-        if(!list.isEmpty()){
+    public void newHS() {
+        if (!list.isEmpty()) {
             List<int[]> heatSources = list.readAllDel();
 
             for (int[] cell : heatSources) {
-                int i = cell[0]; // Vrstica
-                int j = cell[1]; // Stolpec
+                int i = cell[0];
+                int j = cell[1];
 
                 if (i >= 0 && i < row && j >= 0 && j < col) {
                     prevTemp[i][j] = 100.F;
                     nowTemp[i][j] = 100.F;
                     isHeatSource[i][j] = true;
-                    System.out.println("Dodajam ročni heat source: (" + i + ", " + j + ")");
-                } else{
-                    System.out.println("napaka out of bound" + i+" "+j);
+                } else {
                 }
             }
         }
@@ -116,24 +114,24 @@ public class MatrikaCelic {
 
     public void arrayBrav() {
         for (int i = 0; i <= 100; i++) {
-            if (i < 25) { // Temno modra do svetlo modra
+            if (i < 25) {
                 double r = 0;
                 double g = 0;
-                double b = 0.545 + (0.455 / 25.0) * i; // Spreminjanje modre komponente
+                double b = 0.545 + (0.455 / 25.0) * i;
                 barva[i] = Color.color(r, g, b);
-            } else if (i < 50) { // Svetlo modra do zelena
+            } else if (i < 50) {
                 double r = 0;
-                double g = (1.0 / 25.0) * (i - 25); // Spreminjanje zelene komponente
-                double b = 1.0 - (1.0 / 25.0) * (i - 25); // Spreminjanje modre komponente
+                double g = (1.0 / 25.0) * (i - 25);
+                double b = 1.0 - (1.0 / 25.0) * (i - 25);
                 barva[i] = Color.color(r, g, b);
-            } else if (i < 75) { // Zelena do rumena
-                double r = (1.0 / 25.0) * (i - 50); // Spreminjanje rdeče komponente
+            } else if (i < 75) {
+                double r = (1.0 / 25.0) * (i - 50);
                 double g = 1.0;
                 double b = 0;
                 barva[i] = Color.color(r, g, b);
-            } else { // Rumena do rdeča
+            } else {
                 double r = 1.0;
-                double g = 1.0 - (1.0 / 25.0) * (i - 75); // Spreminjanje zelene komponente
+                double g = 1.0 - (1.0 / 25.0) * (i - 75);
                 double b = 0;
                 barva[i] = Color.color(r, g, b);
             }

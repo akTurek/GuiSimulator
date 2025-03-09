@@ -2,7 +2,6 @@ package org.example.guisimulator;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -14,12 +13,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
-
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -33,7 +29,7 @@ public class HelloController {
     private final Condition rendered = lock.newCondition();
     public RocnoVneseneTocke list = new RocnoVneseneTocke();
     private final List<double[]> clickedCells = new LinkedList<>();
-    private boolean running = false;
+
 
     @FXML
     WritableImage image;
@@ -65,7 +61,7 @@ public class HelloController {
         choiceBox.setValue(izbira[0]);
 
         racunanje.setText("Zacni simulacijo");
-        image = new WritableImage(612,612);
+        image = new WritableImage(600, 600);
         redraw();
         imageView.setImage(image);
 
@@ -78,30 +74,30 @@ public class HelloController {
         imageView.setOnMouseClicked(event -> {
             double mouseX = event.getX();
             double mouseY = event.getY();
-            relCordClick(mouseX,mouseY);
-            if(novoRisanje.get() == true){
+            relCordClick(mouseX, mouseY);
+            if (novoRisanje.get() == true) {
                 convertList();
             }
         });
 
-            slable.textProperty().addListener((observable, oldValue, newValue) -> {
-                if (newValue.isBlank() || newValue.equals("0")) {
-                    Platform.runLater(() -> slable.setText("100")); // Nastavi vrednost na 100
-                    System.out.println("Polje je bilo prazno ali 0, nastavitev na 100.");
-                }
+        slable.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isBlank() || newValue.equals("0")) {
+                Platform.runLater(() -> slable.setText("100")); // Nastavi vrednost na 100
+                System.out.println("Polje je bilo prazno ali 0, nastavitev na 100.");
+            }
 
-                redraw();
-            });
+            redraw();
+        });
 
-            vlable.textProperty().addListener((observable, oldValue, newValue) -> {
-                if (newValue.isBlank() || newValue.equals("0")) {
-                    Platform.runLater(() -> vlable.setText("100")); // Nastavi vrednost na 100
-                    System.out.println("Polje je bilo prazno ali 0, nastavitev na 100.");
-                }
-                redraw();
-            });
+        vlable.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isBlank() || newValue.equals("0")) {
+                Platform.runLater(() -> vlable.setText("100")); // Nastavi vrednost na 100
+                System.out.println("Polje je bilo prazno ali 0, nastavitev na 100.");
+            }
+            redraw();
+        });
 
-        System.out.println("Sirina image "+image.getWidth()+" visina "+image.getHeight());
+        System.out.println("Sirina image " + image.getWidth() + " visina " + image.getHeight());
 
     }
 
@@ -165,7 +161,6 @@ public class HelloController {
         String colS = vlable.getText();
 
         if ((rowS.isBlank()) || (colS.isBlank())) {
-            System.out.println("Napaka: Polja ne smejo biti prazna ali imeti vrednost 0!");
             return;
         }
 
@@ -173,51 +168,42 @@ public class HelloController {
         int col = Integer.parseInt(colS);
 
         if (row == 0 || col == 0) {
-            System.out.println("Napaka: Polja ne smejo biti prazna ali imeti vrednost 0!");
             return;
         }
 
         double cellWidth = image.getWidth() / col;
-            double cellHeight = image.getHeight() / row;
+        double cellHeight = image.getHeight() / row;
 
-            for (int x = 0; x < image.getWidth(); x++) {
-                for (int y = 0; y < image.getHeight(); y++) {
-                    pixelWriter.setColor(x, y, Color.rgb(0, 0, 254));
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                pixelWriter.setColor(x, y, Color.rgb(0, 0, 254));
+            }
+        }
+
+        for (double[] point : clickedCells) {
+            int cellX = (int) (point[0] * col);
+            int cellY = (int) (point[1] * row);
+
+            int startX = (int) (cellX * cellWidth);
+            int startY = (int) (cellY * cellHeight);
+
+            for (int x = startX; x < startX + cellWidth && x < image.getWidth(); x++) {
+                for (int y = startY; y < startY + cellHeight && y < image.getHeight(); y++) {
+                    pixelWriter.setColor(x, y, Color.RED);
                 }
             }
-
-            for (double[] point : clickedCells) {
-                int cellX = (int) (point[0] * col);
-                int cellY = (int) (point[1] * row);
-
-                int startX = (int) (cellX * cellWidth);
-                int startY = (int) (cellY * cellHeight);
-
-                for (int x = startX; x < startX + cellWidth && x < image.getWidth(); x++) {
-                    for (int y = startY; y < startY + cellHeight && y < image.getHeight(); y++) {
-                        pixelWriter.setColor(x, y, Color.RED);
-                    }
-                }
-            }
+        }
     }
 
-    private void updateImageSize(int newCol, int newRow) {
-        int cellSize = 6;
-        int newImageWidth = (newCol + 2) * cellSize;
-        int newImageHeight = (newRow + 2) * cellSize;
 
-        WritableImage newImage = new WritableImage(newImageWidth, newImageHeight);
-        imageView.setImage(newImage);
-    }
-
-    private void convertList(){
+    private void convertList() {
         int row = Integer.parseInt(slable.getText());
         int col = Integer.parseInt(vlable.getText());
 
         for (double[] point : clickedCells) {
             int cellX = (int) (point[0] * col);
             int cellY = (int) (point[1] * row);
-            list.insert(cellX,cellY);
+            list.insert(cellX, cellY);
         }
         clickedCells.clear();
     }
@@ -232,13 +218,9 @@ public class HelloController {
 
     }
 
-
-
-
-
     @FXML
     public void zacbiSim() {
-        if (novoRisanje.get() == false){
+        if (novoRisanje.get() == false) {
             convertList();
             novoRisanje.set(true);
             new CanvasRedrawHandler().start();
@@ -252,8 +234,6 @@ public class HelloController {
 
     }
 
-
-
     private class CanvasRedrawHandler extends AnimationTimer {
         public long time = System.currentTimeMillis();
         public Sekvencno sekvencno;
@@ -261,85 +241,80 @@ public class HelloController {
 
         @Override
         public void handle(long now) {
-        String bizbira = choiceBox.getValue();
+            String bizbira = choiceBox.getValue();
 
 
-        switch (bizbira) {
+            switch (bizbira) {
 
-            case "Sekvencno GUI":
-                if (sekvencno == null && novoRisanje.get()) {
-                    int row = Integer.parseInt(slable.getText());
-                    int col = Integer.parseInt(vlable.getText());
-                    int hs = Integer.parseInt(hslable.getText());
-                    WritableImage newImage = new WritableImage((col+2)*6, (row+2)*6);
-                    image = newImage;
-                    String nacin = choiceBox.getValue();
+                case "Sekvencno GUI":
+                    if (sekvencno == null && novoRisanje.get()) {
+                        int row = Integer.parseInt(slable.getText());
+                        int col = Integer.parseInt(vlable.getText());
+                        int hs = Integer.parseInt(hslable.getText());
+                        WritableImage newImage = new WritableImage((col + 2) * 6, (row + 2) * 6);
+                        image = newImage;
 
-                    timeS = System.currentTimeMillis();
-                    sekvencno = new Sekvencno(row, col, hs, image, lock, rendered, novoRisanje, list, true);
-                    System.out.println("v CanvasRedrawHandler image w and h "+image.getWidth()+" "+image.getHeight());
-                    System.out.println("v CanvasRedrawHandler imageview w and h "+imageView.getFitWidth()+" "+imageView.getFitWidth());
-                    System.out.println("v CanvasRedrawHandler velikost canvasa w h "+sekvencno.canvas.getWidth()+" "+sekvencno.canvas.getHeight());
+                        timeS = System.currentTimeMillis();
+                        sekvencno = new Sekvencno(row, col, hs, image, lock, rendered, novoRisanje, list, true);
+                        sekvencno.start();
 
-                    sekvencno.start();
-
-                }
-
-                if (sekvencno != null && novoRisanje.get()) {
-                    if (lock.tryLock()) {
-                        try {
-                            //System.out.println("Rendering canvas");
-                            sekvencno.canvas.snapshot(null, image);
-                            Platform.runLater(() -> imageView.setImage(image));
-                            rendered.signal();
-                        } finally {
-                            lock.unlock();
-                        }
                     }
-                } else {
-                    novoRisanje.set(false);
-                    long l = System.currentTimeMillis() - timeS;
-                    racunanje.setText("Konec, cas simulacije: "+l+" ms");
-                    Platform.runLater(() -> toggleUI(false));
-                    this.stop();
-                }
 
-                break;
+                    if (sekvencno != null && novoRisanje.get()) {
+                        if (lock.tryLock()) {
+                            try {
+                                //System.out.println("Rendering canvas");
+                                sekvencno.canvas.snapshot(null, image);
+                                Platform.runLater(() -> imageView.setImage(image));
+                                rendered.signal();
+                            } finally {
+                                lock.unlock();
+                            }
+                        }
+                    } else {
+                        novoRisanje.set(false);
+                        long l = System.currentTimeMillis() - timeS;
+                        racunanje.setText("Konec, cas simulacije: " + l + " ms");
+                        Platform.runLater(() -> toggleUI(false));
+                        Platform.runLater(() -> hslable.setText("100"));
+                        this.stop();
+                    }
 
-            case "Sekvencno":
-                if (sekvencno == null && novoRisanje.get()) {
-                    int row = Integer.parseInt(slable.getText());
-                    int col = Integer.parseInt(vlable.getText());
-                    int hs = Integer.parseInt(hslable.getText());
-                    String nacin = choiceBox.getValue();
+                    break;
 
-                    timeS = System.currentTimeMillis();
-                    sekvencno = new Sekvencno(row, col, hs, image, lock, rendered, novoRisanje, list, false);
-                    sekvencno.start();
+                case "Sekvencno":
+                    if (sekvencno == null && novoRisanje.get()) {
+                        int row = Integer.parseInt(slable.getText());
+                        int col = Integer.parseInt(vlable.getText());
+                        int hs = Integer.parseInt(hslable.getText());
+                        String nacin = choiceBox.getValue();
 
-                }
+                        timeS = System.currentTimeMillis();
+                        sekvencno = new Sekvencno(row, col, hs, image, lock, rendered, novoRisanje, list, false);
+                        sekvencno.start();
 
-                if (sekvencno != null && novoRisanje.get()) {
+                    }
 
-                } else {
-                    novoRisanje.set(false);
-                    long l = System.currentTimeMillis() - timeS;
-                    racunanje.setText("Konec, cas simulacije: "+l+" ms");
-                    Platform.runLater(() -> toggleUI(false));
-                    this.stop();
-                }
+                    if (sekvencno != null && novoRisanje.get()) {
 
-                break;
+                    } else {
+                        novoRisanje.set(false);
+                        long l = System.currentTimeMillis() - timeS;
+                        racunanje.setText("Konec, cas simulacije: " + l + " ms");
+                        Platform.runLater(() -> toggleUI(false));
+                        this.stop();
+                    }
+
+                    break;
 
 
-        }
+            }
             long elapsedTime = (System.nanoTime() - time) / 1_000_000;
             System.out.println("Time since last redraw: " + elapsedTime + " ms");
             time = System.nanoTime();
 
         }
     }
-
 
 
 }
