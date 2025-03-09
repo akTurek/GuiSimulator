@@ -23,9 +23,10 @@ public class Sekvencno extends Service<Void> {
     public GraphicsContext gc;
     public AtomicBoolean konec;
     public RocnoVneseneTocke list;
+    public boolean gui;
 
 
-    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec, RocnoVneseneTocke list) {
+    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec, RocnoVneseneTocke list, boolean gui) {
         this.matrikaCelic = new MatrikaCelic(row+2, col+2, numOfHeat, list);
         this.isOverB = false;
         this.lock = lock;
@@ -38,6 +39,7 @@ public class Sekvencno extends Service<Void> {
         gc.setFill(matrikaCelic.getCol(0,0));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         this.konec = konec;
+        this.gui = gui;
 
         System.out.println("v sekvencnem image w and h "+image.getWidth()+" "+image.getHeight());
         System.out.println("v sekvencenm velikost canvasa w h "+canvas.getWidth()+" "+canvas.getHeight());
@@ -51,7 +53,7 @@ public class Sekvencno extends Service<Void> {
         return matrikaCelic;
     }
 
-    public void calTemp() throws InterruptedException {
+    public void calTempGUI() throws InterruptedException {
         do {
             lock.lock();
             matrikaCelic.newHS();
@@ -93,16 +95,54 @@ public class Sekvencno extends Service<Void> {
     }
 
 
+    public void calTemp() throws InterruptedException {
+        do {
+                float maxTempChange = 0;
+                float change;
+                int rows = matrikaCelic.getRow();
+                int cols = matrikaCelic.getCol();
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        matrikaCelic.calPrevTemp(i, j);
+                    }
+                }
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        matrikaCelic.calNowTemp(i, j);
+
+                        change = matrikaCelic.getTempChange(i, j);
+                        if (change > maxTempChange) {
+                            maxTempChange = change;
+                        }
+                    }
+                }
+            System.out.println(maxTempChange);
+            if (maxTempChange >= 0.25) {
+                isOverB = false;
+            } else {
+                isOverB = true;
+            }
+        } while (!isOverB);
+
+    }
+
 
     @Override
     protected Task<Void> createTask() {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                calTemp();
+
+                if (gui){
+                    calTempGUI();
+                } else {
+                    calTemp();
+                }
                 konec.set(false);
                 return null;
             }
+
+
         };
     }
 }

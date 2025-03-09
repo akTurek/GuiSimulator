@@ -27,20 +27,16 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class HelloController {
 
-    String[] izbira = {"Sekvencno"};
+    String[] izbira = {"Sekvencno GUI", "Sekvencno"};
     public AtomicBoolean novoRisanje = new AtomicBoolean();
     private final Lock lock = new ReentrantLock();
     private final Condition rendered = lock.newCondition();
     public RocnoVneseneTocke list = new RocnoVneseneTocke();
     private final List<double[]> clickedCells = new LinkedList<>();
     private boolean running = false;
-  ;
-
-
 
     @FXML
     WritableImage image;
-
     @FXML
     VBox vBox;
     @FXML
@@ -51,7 +47,6 @@ public class HelloController {
     TextField hslable;
     @FXML
     Button start;
-
     @FXML
     AnchorPane pane;
     @FXML
@@ -60,8 +55,6 @@ public class HelloController {
     ChoiceBox<String> choiceBox;
     @FXML
     ImageView imageView;
-
-
 
     public HelloController() {
     }
@@ -72,11 +65,12 @@ public class HelloController {
         choiceBox.setValue(izbira[0]);
 
         racunanje.setText("Zacni simulacijo");
-        image = new WritableImage(600,600);
-
+        image = new WritableImage(612,612);
+        redraw();
         imageView.setImage(image);
-        imageView.setPreserveRatio(false);
 
+        imageView.setPreserveRatio(false);
+        imageView.setSmooth(true);
         imageView.fitWidthProperty().bind(pane.widthProperty().subtract(vBox.widthProperty()));
         imageView.fitHeightProperty().bind(pane.heightProperty());
 
@@ -90,16 +84,15 @@ public class HelloController {
             }
         });
 
-
             slable.textProperty().addListener((observable, oldValue, newValue) -> {
                 if (newValue.isBlank() || newValue.equals("0")) {
                     Platform.runLater(() -> slable.setText("100")); // Nastavi vrednost na 100
                     System.out.println("Polje je bilo prazno ali 0, nastavitev na 100.");
                 }
+
                 redraw();
             });
 
-            // Listener za spremljanje sprememb v vlable
             vlable.textProperty().addListener((observable, oldValue, newValue) -> {
                 if (newValue.isBlank() || newValue.equals("0")) {
                     Platform.runLater(() -> vlable.setText("100")); // Nastavi vrednost na 100
@@ -108,11 +101,6 @@ public class HelloController {
                 redraw();
             });
 
-
-
-
-        pane.widthProperty().addListener((obs, oldWidth, newWidth) -> resizeImage(newWidth.doubleValue(), pane.getHeight()));
-        pane.heightProperty().addListener((obs, oldHeight, newHeight) -> resizeImage(pane.getWidth(), newHeight.doubleValue()));
         System.out.println("Sirina image "+image.getWidth()+" visina "+image.getHeight());
 
     }
@@ -178,79 +166,60 @@ public class HelloController {
 
         if ((rowS.isBlank()) || (colS.isBlank())) {
             System.out.println("Napaka: Polja ne smejo biti prazna ali imeti vrednost 0!");
-            return; // Prekini izvajanje metode
+            return;
         }
 
-        int row = Integer.parseInt(rowS); // Trenutno število vrstic
-        int col = Integer.parseInt(colS); // Trenutno število stolpcev
+        int row = Integer.parseInt(rowS);
+        int col = Integer.parseInt(colS);
 
         if (row == 0 || col == 0) {
             System.out.println("Napaka: Polja ne smejo biti prazna ali imeti vrednost 0!");
-            return; // Prekini izvajanje metode
+            return;
         }
 
-        double cellWidth = image.getWidth() / col;   // Širina ene celice
-            double cellHeight = image.getHeight() / row; // Višina ene celice
+        double cellWidth = image.getWidth() / col;
+            double cellHeight = image.getHeight() / row;
 
-            // Očisti sliko (vse pobarva v modro)
             for (int x = 0; x < image.getWidth(); x++) {
                 for (int y = 0; y < image.getHeight(); y++) {
-                    pixelWriter.setColor(x, y, Color.rgb(0, 0, 254)); // Modra barva
+                    pixelWriter.setColor(x, y, Color.rgb(0, 0, 254));
                 }
             }
 
-            // Preberi relativne koordinate klikov in jih preračunaj v celice
             for (double[] point : clickedCells) {
-                int cellX = (int) (point[0] * col); // Iz relativne vrednosti izračunaj indeks stolpca
-                int cellY = (int) (point[1] * row); // Iz relativne vrednosti izračunaj indeks vrstice
+                int cellX = (int) (point[0] * col);
+                int cellY = (int) (point[1] * row);
 
-                // Izračunaj začetne koordinate celice
                 int startX = (int) (cellX * cellWidth);
                 int startY = (int) (cellY * cellHeight);
 
-                // Pobarvaj celotno celico
                 for (int x = startX; x < startX + cellWidth && x < image.getWidth(); x++) {
                     for (int y = startY; y < startY + cellHeight && y < image.getHeight(); y++) {
                         pixelWriter.setColor(x, y, Color.RED);
                     }
                 }
             }
+    }
 
+    private void updateImageSize(int newCol, int newRow) {
+        int cellSize = 6;
+        int newImageWidth = (newCol + 2) * cellSize;
+        int newImageHeight = (newRow + 2) * cellSize;
+
+        WritableImage newImage = new WritableImage(newImageWidth, newImageHeight);
+        imageView.setImage(newImage);
     }
 
     private void convertList(){
-        int row = Integer.parseInt(slable.getText()); // Trenutno število vrstic
-        int col = Integer.parseInt(vlable.getText()); // Trenutno število stolpcev
+        int row = Integer.parseInt(slable.getText());
+        int col = Integer.parseInt(vlable.getText());
 
         for (double[] point : clickedCells) {
-            int cellX = (int) (point[0] * col); // Iz relativne vrednosti izračunaj indeks stolpca
-            int cellY = (int) (point[1] * row); // Iz relativne vrednosti izračunaj indeks vrstice
+            int cellX = (int) (point[0] * col);
+            int cellY = (int) (point[1] * row);
             list.insert(cellX,cellY);
         }
         clickedCells.clear();
-    }
-
-
-    @FXML
-    private void resizeImage(double newWidth, double newHeight) {
-        if (newWidth <= 0 || newHeight <= 0) {
-            System.out.println("Preskakujem resize, ker so dimenzije neveljavne: " + newWidth + "x" + newHeight);
-            return;
-        }
-
-        // Nastavitev širine in višine glede na ImageView
-        int width = (int) Math.max(1, imageView.getFitWidth());
-        int height = (int) Math.max(1, imageView.getFitHeight());
-
-        // Ustvarimo novo sliko z novo velikostjo
-        WritableImage newImage = new WritableImage(width, height);
-        image = newImage;
-
-        if (!novoRisanje.get()) {
-            redraw();
-            imageView.setImage(newImage);
-            System.out.println("Prilagojena velikost slike: " + width + " x " + height);
-        }
     }
 
 
@@ -261,14 +230,6 @@ public class HelloController {
         choiceBox.setDisable(disable);
         start.setDisable(disable);
 
-        // Onemogoči spreminjanje velikosti okna
-        Platform.runLater(() -> {
-            Stage stage = (Stage) start.getScene().getWindow(); // Pridobi Stage iz start gumba
-            if (stage != null) {
-                stage.setResizable(!disable);
-                System.out.println("Stage resizable set to: " + !disable); // Debug izpis
-            }
-        });
     }
 
 
@@ -282,6 +243,7 @@ public class HelloController {
             novoRisanje.set(true);
             new CanvasRedrawHandler().start();
             racunanje.setText("Racunanje");
+            toggleUI(true);
 
         } else {
             new CanvasRedrawHandler().stop();
@@ -304,15 +266,17 @@ public class HelloController {
 
         switch (bizbira) {
 
-            case "Sekvencno":
+            case "Sekvencno GUI":
                 if (sekvencno == null && novoRisanje.get()) {
                     int row = Integer.parseInt(slable.getText());
                     int col = Integer.parseInt(vlable.getText());
                     int hs = Integer.parseInt(hslable.getText());
+                    WritableImage newImage = new WritableImage((col+2)*6, (row+2)*6);
+                    image = newImage;
                     String nacin = choiceBox.getValue();
 
                     timeS = System.currentTimeMillis();
-                    sekvencno = new Sekvencno(row, col, hs, image, lock, rendered, novoRisanje, list);
+                    sekvencno = new Sekvencno(row, col, hs, image, lock, rendered, novoRisanje, list, true);
                     System.out.println("v CanvasRedrawHandler image w and h "+image.getWidth()+" "+image.getHeight());
                     System.out.println("v CanvasRedrawHandler imageview w and h "+imageView.getFitWidth()+" "+imageView.getFitWidth());
                     System.out.println("v CanvasRedrawHandler velikost canvasa w h "+sekvencno.canvas.getWidth()+" "+sekvencno.canvas.getHeight());
@@ -342,13 +306,36 @@ public class HelloController {
 
                 break;
 
+            case "Sekvencno":
+                if (sekvencno == null && novoRisanje.get()) {
+                    int row = Integer.parseInt(slable.getText());
+                    int col = Integer.parseInt(vlable.getText());
+                    int hs = Integer.parseInt(hslable.getText());
+                    String nacin = choiceBox.getValue();
+
+                    timeS = System.currentTimeMillis();
+                    sekvencno = new Sekvencno(row, col, hs, image, lock, rendered, novoRisanje, list, false);
+                    sekvencno.start();
+
+                }
+
+                if (sekvencno != null && novoRisanje.get()) {
+
+                } else {
+                    novoRisanje.set(false);
+                    long l = System.currentTimeMillis() - timeS;
+                    racunanje.setText("Konec, cas simulacije: "+l+" ms");
+                    Platform.runLater(() -> toggleUI(false));
+                    this.stop();
+                }
+
+                break;
+
 
         }
             long elapsedTime = (System.nanoTime() - time) / 1_000_000;
-            //System.out.println("Time since last redraw: " + elapsedTime + " ms");
+            System.out.println("Time since last redraw: " + elapsedTime + " ms");
             time = System.nanoTime();
-            ;
-
 
         }
     }
