@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class HelloController {
 
-    String[] izbira = {"Sekvencno GUI", "Sekvencno"};
+    String[] izbira = {"Sekvencno GUI", "Sekvencno", "Multi GUI"};
     public AtomicBoolean novoRisanje = new AtomicBoolean();
     private final Lock lock = new ReentrantLock();
     private final Condition rendered = lock.newCondition();
@@ -237,6 +237,7 @@ public class HelloController {
     private class CanvasRedrawHandler extends AnimationTimer {
         public long time = System.currentTimeMillis();
         public Sekvencno sekvencno;
+        public Multi multi;
         public long timeS;
 
         @Override
@@ -307,14 +308,46 @@ public class HelloController {
 
                     break;
 
+                case "Multi GUI":
+                    if (multi == null && novoRisanje.get()) {
+                        int row = Integer.parseInt(slable.getText());
+                        int col = Integer.parseInt(vlable.getText());
+                        int hs = Integer.parseInt(hslable.getText());
+                        String nacin = choiceBox.getValue();
+
+                        timeS = System.currentTimeMillis();
+                        multi = new Multi(row, col, hs, image, lock, rendered, novoRisanje, list, true);
+                        multi.start();
+
+                    }
+
+                    if (multi != null && novoRisanje.get()) {
+                        if (lock.tryLock()) {
+                            try {
+                                System.out.println("Rendering canvas");
+                                multi.canvas.snapshot(null, image);
+                                Platform.runLater(() -> imageView.setImage(image));
+                                rendered.signal();
+                            } finally {
+                                lock.unlock();
+                            }
+                        }
+
+                    } else {
+                        novoRisanje.set(false);
+                        long l = System.currentTimeMillis() - timeS;
+                        racunanje.setText("Konec, cas simulacije: " + l + " ms");
+                        Platform.runLater(() -> toggleUI(false));
+                        this.stop();
+                    }
+
+                    }
+                    long elapsedTime = (System.nanoTime() - time) / 1_000_000;
+                    System.out.println("Time since last redraw: " + elapsedTime + " ms");
+                    time = System.nanoTime();
 
             }
-            long elapsedTime = (System.nanoTime() - time) / 1_000_000;
-            System.out.println("Time since last redraw: " + elapsedTime + " ms");
-            time = System.nanoTime();
-
         }
+
+
     }
-
-
-}
