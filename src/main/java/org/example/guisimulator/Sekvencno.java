@@ -2,9 +2,10 @@ package org.example.guisimulator;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import javafx.scene.image.PixelWriter;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
-import javafx.scene.paint.Color;
+
 
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,25 +23,27 @@ public class Sekvencno extends Service<Void> {
     public AtomicBoolean isOverMain;
     public AtomicBoolean emptyBuff;
     public WritableImage lastImage;
+    public Canvas canvas;
+    float change;
 
 
     public Sekvencno(int row, int col, int numOfHeat, AtomicBoolean isOver ,WritableImage lastImage, AtomicBoolean emptyBuff ) {
         this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
         this.isOverMain = isOver;
         this.emptyBuff=emptyBuff;
-        this.xsirina = 1;
-        this.ysirina = 1;
+        this.xsirina = (int) Math.round(lastImage.getHeight() / row);
+        this.ysirina = (int) Math.round(lastImage.getWidth()/ col);
         this.col = col;
         this.row = row;;
         this.lastImage = lastImage;
-
+        this.canvas = new Canvas(lastImage.getWidth(), lastImage.getHeight());
 
     }
 
     public void calTempGUI() throws InterruptedException {
 
         do {
-
+                isOverB = true;
             try {
                 float maxTempChange = 0;
                 float change;
@@ -72,21 +75,23 @@ public class Sekvencno extends Service<Void> {
             }
         } while (!isOverB);
 
+        System.out.println("Koncal s simulacijo racunanjem");
+        draw();
+
     }
 
 
     public void draw(){
         if (emptyBuff.get()){
-            WritableImage current = new WritableImage(row, col);
-            PixelWriter pixelWriter = current.getPixelWriter();
-            for (int i = 1; i < row - 1; i++) {
-                for (int j = 1; j < col - 1; j++) {
-                    Color color = matrikaCelic.getBarva(i,j);
-                    pixelWriter.setColor(i, j, color);
-
+            GraphicsContext gc = canvas.getGraphicsContext2D();
+            System.out.println("Back rise ////////////////////////////////");
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    gc.setFill(matrikaCelic.getBarva(i,j)); // Lahko spremenite barvo glede na simulacijo
+                    gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
                 }
             }
-            lastImage = current;
+            System.out.println("Back narisal //////////////////////////////// "+change);
             emptyBuff.set(false);
         }
 
@@ -99,7 +104,8 @@ public class Sekvencno extends Service<Void> {
             @Override
             protected Void call() throws Exception {
                 calTempGUI();
-                isOverMain.set(false);
+                isOverMain.set(true);
+                System.out.println("Koncal s simulacijo nastavil boolean");
                 return null;
             }
 

@@ -5,12 +5,10 @@ import javafx.concurrent.Service;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
-import javafx.scene.paint.Color;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class Multi  extends Service {
     public MatrikaCelic matrikaCelic;
@@ -37,7 +35,6 @@ public class Multi  extends Service {
         this.list = list;
         this.canvas = new Canvas(image.getWidth(), image.getHeight());
         this.gc = canvas.getGraphicsContext2D();
-        //gc.setFill(matrikaCelic.getCol(0, 0));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         this.konec = konec;
         this.gui = gui;

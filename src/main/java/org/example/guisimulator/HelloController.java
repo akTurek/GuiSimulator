@@ -13,13 +13,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+
 
 public class HelloController {
 
@@ -52,6 +47,7 @@ public class HelloController {
 
     public Sekvencno sekvencno;
     public Multi multi;
+    private AnimationTimer animationTimer;
 
     public HelloController() {
     }
@@ -63,6 +59,14 @@ public class HelloController {
 
         racunanje.setText("Zacni simulacijo");
         image = new WritableImage(600, 600);
+        PixelWriter pixelWriter = image.getPixelWriter();
+
+        // Nastavite vse piksle na modro
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                pixelWriter.setColor(x, y, Color.BLUE); // Nastavite modro barvo
+            }
+        }
         imageView.setImage(image);
 
         imageView.setPreserveRatio(false);
@@ -88,6 +92,25 @@ public class HelloController {
             }
 
         });
+
+        animationTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (!emptyBuff.get()) {
+                    System.out.println("///////////////////////////risem");
+                    sekvencno.canvas.snapshot(null, image);
+                    Platform.runLater(() -> imageView.setImage(image));
+                    emptyBuff.set(true);
+                    System.out.println("///////////////////////////narisal");
+                }
+
+                if (isOverMain.get()) {
+                    stop();  // Ustavi AnimationTimer, ko je isOverMain = true
+                    System.out.println("AnimationTimer ustavljen, simulacija končana.");
+                    toggleUI(false);
+                }
+            }
+        };
 
         System.out.println("Sirina image " + image.getWidth() + " visina " + image.getHeight());
 
@@ -116,6 +139,7 @@ public class HelloController {
             isOverMain.set(false);
             racunanje.setText("Racunanje");
             toggleUI(true);
+            render();
             startCal();
 
         } else {
@@ -142,9 +166,10 @@ public class HelloController {
         }
     }
 
+    public void render() {
+        animationTimer.start();
 
-
-
+    }
 
 
 }
