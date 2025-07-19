@@ -3,6 +3,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 class Task implements Runnable {
     private Multi multi;
@@ -11,9 +12,12 @@ class Task implements Runnable {
     private int endRow;
     private int rows, cols;
     public CyclicBarrier cyclicBarrier;
+    public CyclicBarrier cyclicBarrierStart;
+    private GraphicsContext gc;
+    int xsirina,ysirina;
 
 
-    public Task(Multi multi, int taskId, CyclicBarrier cyclicBarrier ) {
+    public Task(Multi multi, int taskId, CyclicBarrier cyclicBarrier,CyclicBarrier cyclicBarrierStart, GraphicsContext gc, int xsirina, int ysirina) {
         this.multi = multi;
         this.taskId = taskId;
         this.startRow = taskId * (multi.matrikaCelic.row) / (multi.numberOfThreads);
@@ -21,6 +25,10 @@ class Task implements Runnable {
         this.rows = multi.matrikaCelic.row;
         this.cols = multi.matrikaCelic.col;
         this.cyclicBarrier = cyclicBarrier;
+        this.cyclicBarrierStart = cyclicBarrierStart;
+        this.gc = gc;
+        this.xsirina=xsirina;
+        this.ysirina=ysirina;
 
     }
 
@@ -33,48 +41,61 @@ class Task implements Runnable {
         //System.out.println("racunam "+taskId);
         //calPrevTemp
 
-        for (int k = startRow; k < endRow; k++) {
-            for (int j = 0; j < multi.matrikaCelic.col; j++) {
-                multi.matrikaCelic.calPrevTemp(k, j);
-                //System.out.println("racunam "+taskId);
-            }
-        }
+        do {
 
-        //Barrier
-        try {
-            cyclicBarrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            Thread.currentThread().interrupt();
-            System.err.println("Thread interrupted or barrier broken");
-        }
+            //System.out.println("racunam "+taskId);
+            //calPrevTemp
 
-
-        //calNowTemp
-        for (int i = startRow; i < endRow; i++) {
-            for (int j = 0; j < cols; j++) {
-                multi.matrikaCelic.calNowTemp(i, j);
-                change = multi.matrikaCelic.getTempChange(i,j);
-                if (change > maxChange) {
-                    maxChange = change;
+            for (int k = startRow; k < endRow; k++) {
+                for (int j = 0; j < multi.matrikaCelic.col; j++) {
+                    multi.matrikaCelic.calPrevTemp(k, j);
+                    //System.out.println("racunam "+taskId);
                 }
             }
-        }
+
+            //Barrier///////////////////////////////////////////////////////////////////////////////
+            try {
+                cyclicBarrierStart.await();
+            } catch (InterruptedException | BrokenBarrierException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread interrupted or barrier broken");
+            }
 
 
-        if (maxChange > 0.25){
-            System.out.println(maxChange);
-            multi.isOver.set(false);
-        }
+            maxChange = 0.F;
 
 
-        //Barrier
-        try {
-            cyclicBarrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            Thread.currentThread().interrupt();
-            System.err.println("Thread interrupted or barrier broken");
-        }
-        System.out.println("max temp change: " + maxChange+ " is over "+ multi.isOver.get()+" thread "+taskId);
+            //calNowTemp
+            for (int i = startRow; i < endRow; i++) {
+                for (int j = 0; j < cols; j++) {
+                    multi.matrikaCelic.calNowTemp(i, j);
+                    change = multi.matrikaCelic.getTempChange(i,j);
+
+                    if (change > maxChange) {
+                        maxChange = change;
+                    }
+
+                    //gc.setFill(multi.matrikaCelic.getCol(i, j));
+                    gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
+                }
+            }
+            if (maxChange > 0.25F){
+                multi.isOver.set(false);
+                System.out.println(maxChange + " set false "+taskId);
+            }
+
+
+
+            //Barrier//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            try {
+                cyclicBarrier.await();
+            } catch (InterruptedException | BrokenBarrierException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread interrupted or barrier broken");
+            }
+
+
+        } while (!multi.isOver.get());
     }
 
 

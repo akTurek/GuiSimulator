@@ -2,53 +2,44 @@ package org.example.guisimulator;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
+
 
 public class Sekvencno extends Service<Void> {
     public MatrikaCelic matrikaCelic;
-    public boolean isOverB;
-    public Canvas canvas;
-    public Lock lock;
-    public Condition rendered;
+    public boolean isOverB= false;;
+
     public int xsirina;
     public int ysirina;
-    public GraphicsContext gc;
-    public AtomicBoolean konec;
-    public RocnoVneseneTocke list;
-    public boolean gui;
+    public int col;
+    public int row;
+
+    public AtomicBoolean isOverMain;
+    public AtomicBoolean emptyBuff;
+    public WritableImage lastImage;
 
 
-    public Sekvencno(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec, RocnoVneseneTocke list, boolean gui) {
-        this.matrikaCelic = new MatrikaCelic(row + 2, col + 2, numOfHeat, list);
-        this.isOverB = false;
-        this.lock = lock;
-        this.rendered = rendered;
-        this.xsirina = (int) Math.floor(image.getWidth() / (double) col);
-        this.ysirina = (int) Math.floor(image.getHeight() / (double) row);
-        this.list = list;
-        this.canvas = new Canvas(image.getWidth(), image.getHeight());
-        this.gc = canvas.getGraphicsContext2D();
-        gc.setFill(matrikaCelic.getCol(0, 0));
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        this.konec = konec;
-        this.gui = gui;
+    public Sekvencno(int row, int col, int numOfHeat, AtomicBoolean isOver ,WritableImage lastImage, AtomicBoolean emptyBuff ) {
+        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
+        this.isOverMain = isOver;
+        this.emptyBuff=emptyBuff;
+        this.xsirina = 1;
+        this.ysirina = 1;
+        this.col = col;
+        this.row = row;;
+        this.lastImage = lastImage;
 
-    }
 
-    public MatrikaCelic getMatrikaCelic() {
-        return matrikaCelic;
     }
 
     public void calTempGUI() throws InterruptedException {
+
         do {
-            lock.lock();
-            matrikaCelic.newHS();
 
             try {
                 float maxTempChange = 0;
@@ -63,58 +54,41 @@ public class Sekvencno extends Service<Void> {
                 for (int i = 1; i < rows - 1; i++) {
                     for (int j = 1; j < cols - 1; j++) {
                         matrikaCelic.calNowTemp(i, j);
-                        gc.setFill(matrikaCelic.getCol(i, j));
-                        gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
-
-
                         change = matrikaCelic.getTempChange(i, j);
                         if (change > maxTempChange) {
                             maxTempChange = change;
                         }
                     }
                 }
+
+                draw();
                 if (maxTempChange >= 0.25) {
                     isOverB = false;
-                } else {
-                    isOverB = true;
+                    System.out.println(maxTempChange);
                 }
-                rendered.await();
-            } finally {
-                lock.unlock();
+
+            } catch (RuntimeException e) {
+                throw new RuntimeException(e);
             }
         } while (!isOverB);
 
     }
 
 
-    public void calTemp() throws InterruptedException {
-        do {
-            float maxTempChange = 0;
-            float change;
-            int rows = matrikaCelic.getRow();
-            int cols = matrikaCelic.getCol();
-            for (int i = 1; i < rows - 1; i++) {
-                for (int j = 1; j < cols - 1; j++) {
-                    matrikaCelic.calPrevTemp(i, j);
-                }
-            }
-            for (int i = 1; i < rows - 1; i++) {
-                for (int j = 1; j < cols - 1; j++) {
-                    matrikaCelic.calNowTemp(i, j);
+    public void draw(){
+        if (emptyBuff.get()){
+            WritableImage current = new WritableImage(row, col);
+            PixelWriter pixelWriter = current.getPixelWriter();
+            for (int i = 1; i < row - 1; i++) {
+                for (int j = 1; j < col - 1; j++) {
+                    Color color = matrikaCelic.getBarva(i,j);
+                    pixelWriter.setColor(i, j, color);
 
-                    change = matrikaCelic.getTempChange(i, j);
-                    if (change > maxTempChange) {
-                        maxTempChange = change;
-                    }
                 }
             }
-            System.out.println(maxTempChange);
-            if (maxTempChange >= 0.25) {
-                isOverB = false;
-            } else {
-                isOverB = true;
-            }
-        } while (!isOverB);
+            lastImage = current;
+            emptyBuff.set(false);
+        }
 
     }
 
@@ -124,13 +98,8 @@ public class Sekvencno extends Service<Void> {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-
-                if (gui) {
-                    calTempGUI();
-                } else {
-                    calTemp();
-                }
-                konec.set(false);
+                calTempGUI();
+                isOverMain.set(false);
                 return null;
             }
 

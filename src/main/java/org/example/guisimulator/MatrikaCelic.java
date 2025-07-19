@@ -2,7 +2,6 @@ package org.example.guisimulator;
 
 import javafx.scene.paint.Color;
 
-import java.util.List;
 import java.util.Random;
 
 
@@ -14,17 +13,15 @@ public class MatrikaCelic {
     private float[][] prevTemp;
     private float[][] nowTemp;
     private boolean[][] isHeatSource;
-    private RocnoVneseneTocke list;
     Color[] barva = new Color[101];
 
-    public MatrikaCelic(int row, int col, int numOfHeat, RocnoVneseneTocke list) {
+    public MatrikaCelic(int row, int col, int numOfHeat) {
         this.row = row;
         this.col = col;
-        this.numOfHeat = numOfHeat - list.size();
+        this.numOfHeat =numOfHeat;
         this.prevTemp = new float[row][col];
         this.nowTemp = new float[row][col];
         this.isHeatSource = new boolean[row][col];
-        this.list = list;
         narediMatriko();
         arrayBrav();
 
@@ -39,7 +36,7 @@ public class MatrikaCelic {
     }
 
 
-    public Color getCol(int i, int j) {
+    public Color getBarva(int i, int j) {
         return barva[(int) nowTemp[i][j]];
     }
 
@@ -74,7 +71,7 @@ public class MatrikaCelic {
             }
 
         }
-        newHS();
+
     }
 
 
@@ -94,23 +91,7 @@ public class MatrikaCelic {
         return Math.abs(nowTemp[i][j] - prevTemp[i][j]);
     }
 
-    public void newHS() {
-        if (!list.isEmpty()) {
-            List<int[]> heatSources = list.readAllDel();
 
-            for (int[] cell : heatSources) {
-                int i = cell[0];
-                int j = cell[1];
-
-                if (i >= 0 && i < row && j >= 0 && j < col) {
-                    prevTemp[i][j] = 100.F;
-                    nowTemp[i][j] = 100.F;
-                    isHeatSource[i][j] = true;
-                } else {
-                }
-            }
-        }
-    }
 
     public void arrayBrav() {
         for (int i = 0; i <= 100; i++) {

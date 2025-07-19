@@ -29,7 +29,7 @@ public class Multi  extends Service {
     //multi = new Multi(row, col, hs, image, lock, rendered, novoRisanje, list, true);
 
     public Multi(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec, RocnoVneseneTocke list, boolean gui) {
-        this.matrikaCelic = new MatrikaCelic(row + 2, col + 2, numOfHeat, list);
+        this.matrikaCelic = new MatrikaCelic(row + 2, col + 2, numOfHeat);
         this.lock = lock;
         this.rendered = rendered;
         this.xsirina = (int) Math.floor(image.getWidth() / (double) col);
@@ -37,7 +37,7 @@ public class Multi  extends Service {
         this.list = list;
         this.canvas = new Canvas(image.getWidth(), image.getHeight());
         this.gc = canvas.getGraphicsContext2D();
-        gc.setFill(matrikaCelic.getCol(0, 0));
+        //gc.setFill(matrikaCelic.getCol(0, 0));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         this.konec = konec;
         this.gui = gui;
@@ -50,31 +50,24 @@ public class Multi  extends Service {
 
         CyclicBarrier cyclicBarrier = new CyclicBarrier(numberOfThreads);
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+        Runnable reset = () -> this.isOver.set(true);
+        CyclicBarrier cyclicBarrierStart = new CyclicBarrier(numberOfThreads, reset);
 
         int rows = matrikaCelic.getRow();
         int cols = matrikaCelic.getCol();
 
+        for (int i = 0; i < numberOfThreads; i++) {
+
+            Task task = new Task(this, i, cyclicBarrier,cyclicBarrierStart,gc,xsirina,ysirina);
+            executorService.submit(task);
+        }
+
+
         do {
             lock.lock();
-            matrikaCelic.newHS();
             isOver.set(true);
 
-
             try {
-                for (int i = 0; i < numberOfThreads; i++) {
-                    //Nad skupnim objektom brez konflikta, druge lokacijem, ali pa pregrada
-                    Task task = new Task(this, i, cyclicBarrier);
-                    executorService.submit(task);
-                }
-
-
-                for (int i = 0; i < rows; i++) {
-                    for (int j = 0; j < cols; j++) {
-                        gc.setFill(matrikaCelic.getCol(i, j));
-                        gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
-                    }
-                }
-
                 rendered.await();
             } finally {
                 lock.unlock();
