@@ -18,10 +18,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HelloController {
 
-    String[] izbira = {"Sekvencno", "Multi GUI"};
+    String[] izbira = {"Sekvencno", "Multi"};
     public AtomicBoolean isOverMain = new AtomicBoolean(true);
-    public AtomicBoolean emptyBuff = new AtomicBoolean(true);
-
+    public boolean isOverRender;
 
 
     @FXML
@@ -48,6 +47,7 @@ public class HelloController {
     public Sekvencno sekvencno;
     public Multi multi;
     private AnimationTimer animationTimer;
+    private BuffImage buffImage;
 
     public HelloController() {
     }
@@ -96,21 +96,24 @@ public class HelloController {
         animationTimer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                if (!emptyBuff.get()) {
-                    System.out.println("///////////////////////////risem");
-                    sekvencno.canvas.snapshot(null, image);
-                    Platform.runLater(() -> imageView.setImage(image));
-                    emptyBuff.set(true);
-                    System.out.println("///////////////////////////narisal");
-                }
 
-                if (isOverMain.get()) {
-                    stop();  // Ustavi AnimationTimer, ko je isOverMain = true
+                    System.out.println("///////////////////////////risem");
+                    WritableImage frame = buffImage.getDisplayImage();
+                    if(frame!=null){
+                        Platform.runLater(() -> imageView.setImage(frame));
+                    }
+
+                    System.out.println("///////////////////////////narisal");
+
+                if (buffImage.markDisplayed()) {
+                    stop();
                     System.out.println("AnimationTimer ustavljen, simulacija končana.");
                     toggleUI(false);
                 }
             }
         };
+
+
 
         System.out.println("Sirina image " + image.getWidth() + " visina " + image.getHeight());
 
@@ -143,7 +146,6 @@ public class HelloController {
             startCal();
 
         } else {
-
             racunanje.setText("Zacni Simulacijo");
         }
 
@@ -154,20 +156,27 @@ public class HelloController {
         int row = Integer.parseInt(slable.getText());
         int col = Integer.parseInt(vlable.getText());
         int hs = Integer.parseInt(hslable.getText());
-        WritableImage newImage = new WritableImage((col), (row));
-        image = newImage;
+        buffImage = new BuffImage(col,row);
 
         switch (bizbira) {
 
             case "Sekvencno":
-                sekvencno = new Sekvencno(row, col, hs, isOverMain, image, emptyBuff);
+                sekvencno = new Sekvencno(row, col, hs, isOverMain, buffImage);
                 sekvencno.start();
+                animationTimer.start();
+                break;
+            case "Multi":
+                multi = new Multi(row, col, hs, isOverMain, buffImage);
+                multi.start();
+                animationTimer.start();
                 break;
         }
+
+
     }
 
     public void render() {
-        animationTimer.start();
+
 
     }
 

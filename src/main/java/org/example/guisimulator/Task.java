@@ -1,10 +1,9 @@
 package org.example.guisimulator;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
+
 class Task implements Runnable {
     private Multi multi;
     private int taskId;
@@ -13,22 +12,23 @@ class Task implements Runnable {
     private int rows, cols;
     public CyclicBarrier cyclicBarrier;
     public CyclicBarrier cyclicBarrierStart;
-    private GraphicsContext gc;
     int xsirina,ysirina;
 
 
-    public Task(Multi multi, int taskId, CyclicBarrier cyclicBarrier,CyclicBarrier cyclicBarrierStart, GraphicsContext gc, int xsirina, int ysirina) {
+    public Task(Multi multi, int taskId, CyclicBarrier cyclicBarrier,CyclicBarrier cyclicBarrierStart) {
         this.multi = multi;
         this.taskId = taskId;
         this.startRow = taskId * (multi.matrikaCelic.row) / (multi.numberOfThreads);
         this.endRow = Math.min((taskId + 1) * (multi.matrikaCelic.row) / (multi.numberOfThreads), multi.matrikaCelic.row);
+
         this.rows = multi.matrikaCelic.row;
         this.cols = multi.matrikaCelic.col;
+
         this.cyclicBarrier = cyclicBarrier;
         this.cyclicBarrierStart = cyclicBarrierStart;
-        this.gc = gc;
-        this.xsirina=xsirina;
-        this.ysirina=ysirina;
+
+        this.xsirina=multi.xsirina;
+        this.ysirina=multi.ysirina;
 
     }
 
@@ -38,19 +38,15 @@ class Task implements Runnable {
         float change;
         float maxChange= 0.F;;
 
-        //System.out.println("racunam "+taskId);
-        //calPrevTemp
+
 
         do {
 
-            //System.out.println("racunam "+taskId);
-            //calPrevTemp
 
             for (int k = startRow; k < endRow; k++) {
                 for (int j = 0; j < multi.matrikaCelic.col; j++) {
                     multi.matrikaCelic.calPrevTemp(k, j);
-                    //System.out.println("racunam "+taskId);
-                }
+                                    }
             }
 
             //Barrier///////////////////////////////////////////////////////////////////////////////
@@ -74,9 +70,6 @@ class Task implements Runnable {
                     if (change > maxChange) {
                         maxChange = change;
                     }
-
-                    //gc.setFill(multi.matrikaCelic.getCol(i, j));
-                    gc.fillRect(i * xsirina, j * ysirina, xsirina, ysirina);
                 }
             }
             if (maxChange > 0.25F){
@@ -84,6 +77,7 @@ class Task implements Runnable {
                 System.out.println(maxChange + " set false "+taskId);
             }
 
+            draw();
 
 
             //Barrier//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,6 +90,23 @@ class Task implements Runnable {
 
 
         } while (!multi.isOver.get());
+
+
+    }
+
+
+    public void draw() {
+
+        System.out.println("Back rise ////////////////////////////////");
+        for (int i = startRow; i < endRow; i++) {
+            for (int j = 0; j < cols; j++) {
+                Color color = multi.matrikaCelic.getBarva(i, j);
+                multi.nowImage.getPixelWriter().setColor(i * xsirina, j * ysirina, color);
+            }
+        }
+        System.out.println("Back narisal //////////////////////////////// ");
+
+
     }
 
 

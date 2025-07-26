@@ -12,65 +12,46 @@ import java.util.concurrent.locks.Lock;
 
 public class Multi  extends Service {
     public MatrikaCelic matrikaCelic;
-    public Canvas canvas;
-    public Lock lock;
-    public Condition rendered;
+
     public int xsirina;
     public int ysirina;
-    public GraphicsContext gc;
-    public AtomicBoolean konec;
-    public RocnoVneseneTocke list;
-    public boolean gui;
-    public int numberOfThreads =4;
+    public int numberOfThreads =7;
     public AtomicBoolean isOver;
+    public BuffImage image;
+    public WritableImage nowImage;
 
-    //multi = new Multi(row, col, hs, image, lock, rendered, novoRisanje, list, true);
-
-    public Multi(int row, int col, int numOfHeat, WritableImage image, Lock lock, Condition rendered, AtomicBoolean konec, RocnoVneseneTocke list, boolean gui) {
-        this.matrikaCelic = new MatrikaCelic(row + 2, col + 2, numOfHeat);
-        this.lock = lock;
-        this.rendered = rendered;
-        this.xsirina = (int) Math.floor(image.getWidth() / (double) col);
-        this.ysirina = (int) Math.floor(image.getHeight() / (double) row);
-        this.list = list;
-        this.canvas = new Canvas(image.getWidth(), image.getHeight());
-        this.gc = canvas.getGraphicsContext2D();
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        this.konec = konec;
-        this.gui = gui;
-        this.isOver = new AtomicBoolean(false);
-
+    public Multi(int row, int col, int numOfHeat, AtomicBoolean isOver, BuffImage image) {
+        this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
+        this.xsirina = 1;
+        this.ysirina = 1;
+        this.image = image;
+        this.isOver = isOver;
 
     }
 
     public void calTemp() throws InterruptedException {
 
-        CyclicBarrier cyclicBarrier = new CyclicBarrier(numberOfThreads);
-        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
-        Runnable reset = () -> this.isOver.set(true);
-        CyclicBarrier cyclicBarrierStart = new CyclicBarrier(numberOfThreads, reset);
 
-        int rows = matrikaCelic.getRow();
-        int cols = matrikaCelic.getCol();
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+        Runnable reset = () -> {
+            this.isOver.set(true);
+            this.nowImage = image.getDrawImage();
+        };
+
+        Runnable publish = () -> {
+            this.image.submitDrawnImage(nowImage);
+        };
+
+        CyclicBarrier cyclicBarrierStart = new CyclicBarrier(numberOfThreads, reset);
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(numberOfThreads,publish);
+
 
         for (int i = 0; i < numberOfThreads; i++) {
 
-            Task task = new Task(this, i, cyclicBarrier,cyclicBarrierStart,gc,xsirina,ysirina);
+            Task task = new Task(this, i, cyclicBarrier,cyclicBarrierStart);
             executorService.submit(task);
         }
-
-
-        do {
-            lock.lock();
-            isOver.set(true);
-
-            try {
-                rendered.await();
-            } finally {
-                lock.unlock();
-            }
-
-        }while (!isOver.get());
 
 
         // Shutdown the thread pool
@@ -93,7 +74,8 @@ public class Multi  extends Service {
             protected Void call() throws Exception {
                 calTemp();
                 System.out.println("cal temp multi konec");
-                konec.set(false);
+                isOver.set(true);
+                image.setIsOver();
                 return null;
             }
         };
