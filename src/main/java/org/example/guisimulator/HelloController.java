@@ -48,6 +48,8 @@ public class HelloController {
     public Multi multi;
     private AnimationTimer animationTimer;
     private BuffImage buffImage;
+    private long startTime;
+    private long stopTime;
 
     public HelloController() {
     }
@@ -97,19 +99,21 @@ public class HelloController {
             @Override
             public void handle(long now) {
 
-                    System.out.println("///////////////////////////risem");
-                    WritableImage frame = buffImage.getDisplayImage();
-                    if(frame!=null){
-                        Platform.runLater(() -> imageView.setImage(frame));
-                    }
 
-                    System.out.println("///////////////////////////narisal");
+                       if(buffImage.getFull()){
+                           WritableImage frame = buffImage.getDisplayImage();
+                           Platform.runLater(() -> imageView.setImage(frame));
+                           System.out.println("///////////////////////////narisal");
+                       }
 
-                if (buffImage.markDisplayed()) {
-                    stop();
-                    System.out.println("AnimationTimer ustavljen, simulacija končana.");
-                    toggleUI(false);
-                }
+                       if (buffImage.markDisplayed()) {
+                           stop();
+                           System.out.println("AnimationTimer ustavljen, simulacija končana.");
+                           toggleUI(false);
+                           stopTime= System.currentTimeMillis();
+                           racunanje.setText("Trajanje; "+ Long.toString(stopTime-startTime));
+                       }
+
             }
         };
 
@@ -144,6 +148,7 @@ public class HelloController {
             toggleUI(true);
             render();
             startCal();
+            startTime = System.currentTimeMillis();
 
         } else {
             racunanje.setText("Zacni Simulacijo");
@@ -157,6 +162,7 @@ public class HelloController {
         int col = Integer.parseInt(vlable.getText());
         int hs = Integer.parseInt(hslable.getText());
         buffImage = new BuffImage(col,row);
+
 
         switch (bizbira) {
 

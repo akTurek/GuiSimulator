@@ -1,8 +1,12 @@
 package org.example.guisimulator;
 
+
+
 import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class BuffImage {
 
@@ -12,52 +16,69 @@ public class BuffImage {
     private final AtomicBoolean full = new AtomicBoolean(false);
     private final AtomicBoolean isOverBuffImage = new AtomicBoolean(false);
 
-    private volatile WritableImage displayImage;
-    private volatile WritableImage nextImage;
+    private Color[][] barva;
+    private Color[][] barva2;
+    private final ReentrantLock lock = new ReentrantLock();  // Dodano zaklepanje
 
     public BuffImage(int col, int row) {
         this.col = col;
         this.row = row;
-        this.displayImage = null;
-        this.nextImage = null;
     }
 
     public WritableImage getDisplayImage() {
-        if (full.get()) {
-            return displayImage;
-        } else {
-            return null;
+        WritableImage disply = draw();
+        return disply;
+    }
+
+    public boolean getFull() {
+        return full.get();
+    }
+
+    public boolean markDisplayed() {
+        lock.lock();  // Zaklepanje pred spremembo stanja
+        try {
+            full.set(false);
+
+            if (!full.get() && isOverBuffImage.get()) {
+                full.set(false);
+                return true;
+            }
+
+            return false;
+        } finally {
+            lock.unlock();  // Odklepanje po uporabi
         }
     }
 
-
-    public  boolean markDisplayed() {
-        full.set(false);
-
-        if (nextImage != null) {
-            displayImage = nextImage;
-            nextImage = null;
-            full.set(true);
-        }
-
-        return (!full.get() && isOverBuffImage.get());
-    }
-
-    public WritableImage getDrawImage() {
-        return new WritableImage(col, row);
-    }
-
-
-    public void submitDrawnImage(WritableImage image) {
-        if (!full.get()) {
-            displayImage = image;
-            full.set(true);
-        } else {
-            nextImage = image;
+    public void submitDrawnImage(Color[][] image) {
+        lock.lock();  // Zaklepanje pred spremembo stanja
+        try {
+            if (!full.get()) {
+                barva = image;
+                full.set(true);
+            }
+        } finally {
+            lock.unlock();  // Odklepanje po uporabi
         }
     }
 
-    public void setIsOver() { //to nastavi risalna nit da je koncala
+    public void setIsOver() {
         isOverBuffImage.set(true);
     }
+
+    public boolean isImageReadyToDisplay() {
+        return full.get() && isOverBuffImage.get();
+    }
+
+    public WritableImage draw() {
+        WritableImage nowImage = new WritableImage(row, col);
+        for (int i = 0; i < row; i++) {
+            for (int j = 0; j < col; j++) {
+                nowImage.getPixelWriter().setColor(i, j, barva[i][j]);
+            }
+        }
+
+        return nowImage;
+    }
 }
+

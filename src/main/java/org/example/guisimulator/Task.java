@@ -46,12 +46,12 @@ class Task implements Runnable {
             for (int k = startRow; k < endRow; k++) {
                 for (int j = 0; j < multi.matrikaCelic.col; j++) {
                     multi.matrikaCelic.calPrevTemp(k, j);
-                                    }
+                }
             }
 
             //Barrier///////////////////////////////////////////////////////////////////////////////
             try {
-                cyclicBarrierStart.await();
+                cyclicBarrierStart.await(); //tukaj se klice get image
             } catch (InterruptedException | BrokenBarrierException e) {
                 Thread.currentThread().interrupt();
                 System.err.println("Thread interrupted or barrier broken");
@@ -70,19 +70,20 @@ class Task implements Runnable {
                     if (change > maxChange) {
                         maxChange = change;
                     }
+                    multi.frame[i][j] = multi.matrikaCelic.getBarva(i,j);
                 }
             }
             if (maxChange > 0.25F){
                 multi.isOver.set(false);
-                System.out.println(maxChange + " set false "+taskId);
+                //System.out.println(maxChange + " set false "+taskId);
             }
 
-            draw();
+
 
 
             //Barrier//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             try {
-                cyclicBarrier.await();
+                cyclicBarrier.await(); //tukaj se klice commit image
             } catch (InterruptedException | BrokenBarrierException e) {
                 Thread.currentThread().interrupt();
                 System.err.println("Thread interrupted or barrier broken");
@@ -95,19 +96,7 @@ class Task implements Runnable {
     }
 
 
-    public void draw() {
 
-        System.out.println("Back rise ////////////////////////////////");
-        for (int i = startRow; i < endRow; i++) {
-            for (int j = 0; j < cols; j++) {
-                Color color = multi.matrikaCelic.getBarva(i, j);
-                multi.nowImage.getPixelWriter().setColor(i * xsirina, j * ysirina, color);
-            }
-        }
-        System.out.println("Back narisal //////////////////////////////// ");
-
-
-    }
 
 
     @Override

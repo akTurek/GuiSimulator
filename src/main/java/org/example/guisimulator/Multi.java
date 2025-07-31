@@ -5,6 +5,8 @@ import javafx.concurrent.Service;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
@@ -15,10 +17,12 @@ public class Multi  extends Service {
 
     public int xsirina;
     public int ysirina;
-    public int numberOfThreads =7;
+    public int numberOfThreads = Runtime.getRuntime().availableProcessors()-1;
     public AtomicBoolean isOver;
     public BuffImage image;
-    public WritableImage nowImage;
+    public Color [][] frame;
+    int col, row;
+
 
     public Multi(int row, int col, int numOfHeat, AtomicBoolean isOver, BuffImage image) {
         this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
@@ -26,7 +30,9 @@ public class Multi  extends Service {
         this.ysirina = 1;
         this.image = image;
         this.isOver = isOver;
-
+        this.row = row;
+        this.col = col;
+        this.frame = new Color[row][col];
     }
 
     public void calTemp() throws InterruptedException {
@@ -36,11 +42,14 @@ public class Multi  extends Service {
 
         Runnable reset = () -> {
             this.isOver.set(true);
-            this.nowImage = image.getDrawImage();
+            this.frame = new Color[row][col];
         };
 
         Runnable publish = () -> {
-            this.image.submitDrawnImage(nowImage);
+            if(!image.getFull()){
+                this.image.submitDrawnImage(frame);
+            }
+
         };
 
         CyclicBarrier cyclicBarrierStart = new CyclicBarrier(numberOfThreads, reset);
@@ -66,6 +75,10 @@ public class Multi  extends Service {
         }
 
     }
+
+
+
+
 
     @Override
     protected javafx.concurrent.Task createTask() {

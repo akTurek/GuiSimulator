@@ -67,22 +67,22 @@ public class Sekvencno extends Service<Void> {
                 throw new RuntimeException(e);
             }
         } while (!isOverB);
-
+        image.setIsOver();
         System.out.println("Koncal s simulacijo racunanjem");
-        draw();
+
     }
 
     public void draw() {
 
             System.out.println("Back rise ////////////////////////////////");
-            WritableImage newImage = image.getDrawImage();
+            Color [][]frame = new Color[row][col];
             for (int i = 0; i < row; i++) {
                 for (int j = 0; j < col; j++) {
                     Color color = matrikaCelic.getBarva(i, j);
-                    newImage.getPixelWriter().setColor(i * xsirina, j * ysirina, color);
+                    frame[i][j] = color;
                 }
             }
-            image.submitDrawnImage(newImage);
+            image.submitDrawnImage(frame);
             System.out.println("Back narisal //////////////////////////////// " + change);
 
 
