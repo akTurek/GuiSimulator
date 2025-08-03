@@ -102,11 +102,11 @@ public class HelloController {
 
                        if(buffImage.getFull()){
                            WritableImage frame = buffImage.getDisplayImage();
-                           Platform.runLater(() -> imageView.setImage(frame));
+                           imageView.setImage(frame);
                            System.out.println("///////////////////////////narisal");
                        }
 
-                       if (buffImage.markDisplayed()) {
+                       if (buffImage.lastFrameDisplayed()) {
                            stop();
                            System.out.println("AnimationTimer ustavljen, simulacija končana.");
                            toggleUI(false);

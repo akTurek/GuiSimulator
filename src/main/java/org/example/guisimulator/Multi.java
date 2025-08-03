@@ -18,18 +18,20 @@ public class Multi  extends Service {
     public int xsirina;
     public int ysirina;
     public int numberOfThreads = Runtime.getRuntime().availableProcessors()-1;
+    public AtomicBoolean isOverMain;
     public AtomicBoolean isOver;
     public BuffImage image;
     public Color [][] frame;
     int col, row;
 
 
-    public Multi(int row, int col, int numOfHeat, AtomicBoolean isOver, BuffImage image) {
+    public Multi(int row, int col, int numOfHeat, AtomicBoolean isOverMain, BuffImage image) {
         this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
         this.xsirina = 1;
         this.ysirina = 1;
         this.image = image;
-        this.isOver = isOver;
+        this.isOverMain = isOverMain;
+        this.isOver = new AtomicBoolean(true);
         this.row = row;
         this.col = col;
         this.frame = new Color[row][col];
@@ -42,12 +44,13 @@ public class Multi  extends Service {
 
         Runnable reset = () -> {
             this.isOver.set(true);
-            this.frame = new Color[row][col];
+            this.frame = image.getDrawImage();
+            System.out.println("Back narisal");
         };
 
         Runnable publish = () -> {
             if(!image.getFull()){
-                this.image.submitDrawnImage(frame);
+                this.image.submitDrawnImage();
             }
 
         };
@@ -87,8 +90,8 @@ public class Multi  extends Service {
             protected Void call() throws Exception {
                 calTemp();
                 System.out.println("cal temp multi konec");
-                isOver.set(true);
-                image.setIsOver();
+                isOverMain.set(true);
+                image.setLastFrame();
                 return null;
             }
         };

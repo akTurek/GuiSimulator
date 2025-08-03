@@ -79,8 +79,6 @@ class Task implements Runnable {
             }
 
 
-
-
             //Barrier//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             try {
                 cyclicBarrier.await(); //tukaj se klice commit image
@@ -92,10 +90,7 @@ class Task implements Runnable {
 
         } while (!multi.isOver.get());
 
-
     }
-
-
 
 
 

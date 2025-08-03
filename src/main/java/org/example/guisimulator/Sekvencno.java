@@ -2,9 +2,6 @@ package org.example.guisimulator;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -20,22 +17,24 @@ public class Sekvencno extends Service<Void> {
 
     public AtomicBoolean isOverMain;
     public float change;
+    public Color [][] frame;
 
     public Sekvencno(int row, int col, int numOfHeat, AtomicBoolean isOver, BuffImage image) {
         this.matrikaCelic = new MatrikaCelic(row, col, numOfHeat);
         this.isOverMain = isOver;
         this.image = image;
-
         this.xsirina = 1;
         this.ysirina = 1;
         this.col = col;
         this.row = row;
+        this.frame = new Color[row][col];
 
     }
 
 
     public void calTempGUI() throws InterruptedException {
         do {
+            frame = image.getDrawImage();
             isOverB = true;
             try {
                 float maxTempChange = 0;
@@ -47,17 +46,18 @@ public class Sekvencno extends Service<Void> {
                         matrikaCelic.calPrevTemp(i, j);
                     }
                 }
-                for (int i = 1; i < rows - 1; i++) {
-                    for (int j = 1; j < cols - 1; j++) {
+                for (int i = 0; i < rows ; i++) {
+                    for (int j = 0; j < cols ; j++) {
                         matrikaCelic.calNowTemp(i, j);
                         change = matrikaCelic.getTempChange(i, j);
                         if (change > maxTempChange) {
                             maxTempChange = change;
                         }
+                        frame[i][j]=matrikaCelic.getBarva(i,j);
                     }
                 }
 
-                draw();
+                image.submitDrawnImage();
                 if (maxTempChange >= 0.25) {
                     isOverB = false;
                     System.out.println(maxTempChange);
@@ -67,27 +67,10 @@ public class Sekvencno extends Service<Void> {
                 throw new RuntimeException(e);
             }
         } while (!isOverB);
-        image.setIsOver();
         System.out.println("Koncal s simulacijo racunanjem");
 
     }
 
-    public void draw() {
-
-            System.out.println("Back rise ////////////////////////////////");
-            Color [][]frame = new Color[row][col];
-            for (int i = 0; i < row; i++) {
-                for (int j = 0; j < col; j++) {
-                    Color color = matrikaCelic.getBarva(i, j);
-                    frame[i][j] = color;
-                }
-            }
-            image.submitDrawnImage(frame);
-            System.out.println("Back narisal //////////////////////////////// " + change);
-
-
-
-    }
 
     @Override
     protected Task<Void> createTask() {
@@ -96,7 +79,7 @@ public class Sekvencno extends Service<Void> {
             protected Void call() throws Exception {
                 calTempGUI();
                 isOverMain.set(true);
-                image.setIsOver();
+                image.setLastFrame();
                 System.out.println("Koncal s simulacijo nastavil boolean");
                 return null;
             }
