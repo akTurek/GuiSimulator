@@ -341,13 +341,13 @@ public class HelloController {
                         this.stop();
                     }
 
-                    }
-                    long elapsedTime = (System.nanoTime() - time) / 1_000_000;
-                    System.out.println("Time since last redraw: " + elapsedTime + " ms");
-                    time = System.nanoTime();
-
             }
+            long elapsedTime = (System.nanoTime() - time) / 1_000_000;
+            System.out.println("Time since last redraw: " + elapsedTime + " ms");
+            time = System.nanoTime();
+
         }
-
-
     }
+
+
+}
